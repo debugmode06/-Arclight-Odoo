@@ -1,3 +1,6 @@
-export { AppLayout } from './AppLayout';
-export { Sidebar } from './Sidebar';
-export { Header } from './Header';
+export * from './Header';
+export * from './Sidebar';
+export * from './MemberSwitcherBar';
+export * from './AppLayout';
+export { default } from './AppLayout';
+

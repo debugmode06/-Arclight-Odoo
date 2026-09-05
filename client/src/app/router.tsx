@@ -2,6 +2,12 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { LoginPage, ProtectedRoute } from '../modules/auth';
 import { AppLayout } from '../components/layout';
 import { DashboardPage } from './pages/DashboardPage';
+import {
+  QuotationsPage,
+  QuotationBuilderPage,
+  QuotationDetailPage,
+} from '../modules/quotations';
+import { ApprovalsPage, ApprovalDetailPage } from '../modules/approvals';
 
 const PlaceholderPage = ({ title }: { title: string }) => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -24,7 +30,7 @@ const PlaceholderPage = ({ title }: { title: string }) => (
 
 /**
  * Application Router
- * Owner: Member 1
+ * Owner: Member 1 (Platform Foundation)
  */
 export const router = createBrowserRouter([
   // ─── Public Auth Routes ─────────────────────────────────────────────────
@@ -56,15 +62,27 @@ export const router = createBrowserRouter([
       },
       {
         path: 'quotations',
-        element: <PlaceholderPage title="Quotations Management" />,
+        element: <QuotationsPage />,
+      },
+      {
+        path: 'quotations/new',
+        element: <QuotationBuilderPage />,
       },
       {
         path: 'quotations/:id',
-        element: <PlaceholderPage title="Quotation Detail" />,
+        element: <QuotationDetailPage />,
+      },
+      {
+        path: 'quotations/:id/edit',
+        element: <QuotationBuilderPage />,
       },
       {
         path: 'approvals',
-        element: <PlaceholderPage title="Discount & Approval Governance" />,
+        element: <ApprovalsPage />,
+      },
+      {
+        path: 'approvals/:id',
+        element: <ApprovalDetailPage />,
       },
       {
         path: 'deal-twin',

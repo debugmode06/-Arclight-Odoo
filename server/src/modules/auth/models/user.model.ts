@@ -1,15 +1,18 @@
-import { Schema, model, Document } from 'mongoose';
+import mongoose, { Schema, model, Document } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { UserRole, APP_CONSTANTS } from '../../../shared';
 
 export interface IUser {
-  name: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
-  passwordHash: string;
+  passwordHash?: string;
+  password?: string;
   role: UserRole;
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface IUserDocument extends IUser, Document {
@@ -20,11 +23,13 @@ const userSchema = new Schema<IUserDocument>(
   {
     name: {
       type: String,
-      required: [true, 'Name is required'],
       trim: true,
-      minlength: [2, 'Name must be at least 2 characters'],
-      maxlength: [100, 'Name cannot exceed 100 characters'],
+      default: function(this: IUserDocument) {
+        return `${this.firstName || ''} ${this.lastName || ''}`.trim() || 'User';
+      }
     },
+    firstName: { type: String, trim: true },
+    lastName: { type: String, trim: true },
     email: {
       type: String,
       required: [true, 'Email is required'],
@@ -35,13 +40,17 @@ const userSchema = new Schema<IUserDocument>(
     },
     passwordHash: {
       type: String,
-      required: [true, 'Password is required'],
+      select: false,
+    },
+    password: {
+      type: String,
       select: false,
     },
     role: {
       type: String,
       enum: Object.values(UserRole),
       default: UserRole.SALES_REP,
+      required: true,
     },
     isActive: {
       type: Boolean,
@@ -57,6 +66,7 @@ const userSchema = new Schema<IUserDocument>(
         delete docObj._id;
         delete docObj.__v;
         delete docObj.passwordHash;
+        delete docObj.password;
         return docObj;
       },
     },
@@ -65,7 +75,9 @@ const userSchema = new Schema<IUserDocument>(
 
 // Method to compare candidate password with stored hash
 userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
-  return bcrypt.compare(candidatePassword, this.passwordHash);
+  const hash = this.passwordHash || this.password;
+  if (!hash) return false;
+  return bcrypt.compare(candidatePassword, hash);
 };
 
 // Static helper to hash passwords before saving
@@ -74,3 +86,5 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 export const UserModel = model<IUserDocument>('User', userSchema);
+export const User = UserModel;
+

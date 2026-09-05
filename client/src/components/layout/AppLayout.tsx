@@ -1,20 +1,31 @@
+import React from 'react';
 import { Outlet } from 'react-router-dom';
-import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { Sidebar } from './Sidebar';
+import { MemberSwitcherBar } from './MemberSwitcherBar';
 
-export function AppLayout() {
+export const AppLayout: React.FC = () => {
   return (
-    <div className="flex min-h-screen bg-surface-50">
-      {/* Sidebar */}
-      <Sidebar />
+    <div className="min-h-screen bg-[#f8f9fc] flex flex-col font-sans text-slate-800 antialiased">
+      {/* Top Navigation Bar */}
+      <Header />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <Header />
-        <main className="flex-1 p-8 overflow-y-auto">
+      {/* Main Workspace Layout */}
+      <div className="flex flex-1 relative">
+        {/* Left Navigation Sidebar */}
+        <Sidebar />
+
+        {/* Dynamic Page Content */}
+        <main className="flex-1 min-w-0 pb-20 overflow-x-hidden p-6 md:p-8">
           <Outlet />
         </main>
       </div>
+
+      {/* Floating Member Switcher Bar */}
+      <MemberSwitcherBar />
     </div>
   );
-}
+};
+
+export default AppLayout;
+
