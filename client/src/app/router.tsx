@@ -5,6 +5,7 @@ import {
   QuotationDetailPage,
 } from '@/modules/quotations';
 import { ApprovalsPage, ApprovalDetailPage } from '@/modules/approvals';
+import { AppLayout } from '@/components/layout';
 
 // ─── Layout placeholders ─────────────────────────────────────────────────────
 // TODO: Member 1 — Replace lazy imports with actual pages as they are built
@@ -51,7 +52,7 @@ export const router = createBrowserRouter([
   // ─── Internal App Routes ────────────────────────────────────────────────
   {
     path: '/app',
-    // TODO: Member 1 — Wrap with <AppLayout /> + auth guard
+    element: <AppLayout />,
     children: [
       {
         index: true,
