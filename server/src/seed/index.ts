@@ -369,12 +369,15 @@ export async function seed(): Promise<void> {
    - 4 Discount Governance Rules
    - 4 Demo Quotations (Safe Draft, Medium Risk, High Risk, Approved)`
   );
-
-  await disconnectDatabase();
 }
 
-seed().catch((err) => {
-  console.error('Seed execution failed:', err);
-  process.exit(1);
-});
+if (process.argv[1] && process.argv[1].includes('seed')) {
+  seed()
+    .then(() => disconnectDatabase())
+    .catch((err) => {
+      console.error('Seed execution failed:', err);
+      process.exit(1);
+    });
+}
+
 

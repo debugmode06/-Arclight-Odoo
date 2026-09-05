@@ -105,7 +105,17 @@ export const CommercialSummaryCard: React.FC<Props> = ({
           <div className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
             Governance Decision
           </div>
-          {risk.requiresApproval ? (
+          {risk.decision === 'BLOCKED' ? (
+            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-rose-50/80 border border-rose-200/80 text-rose-900 text-xs">
+              <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <div className="font-semibold">Blocked — Ceiling Exceeded</div>
+                <div className="text-rose-800 text-[11px] mt-0.5">
+                  Discount terms breach non-negotiable governance policy ceiling.
+                </div>
+              </div>
+            </div>
+          ) : risk.requiresApproval || risk.decision === 'APPROVAL_REQUIRED' ? (
             <div className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-50/80 border border-amber-200/80 text-amber-900 text-xs">
               <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
               <div>

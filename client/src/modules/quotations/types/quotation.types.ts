@@ -74,6 +74,7 @@ export interface RiskEvaluation {
   level: RiskLevel;
   factors: string[];
   requiresApproval: boolean;
+  decision?: GovernanceDecision;
 }
 
 export interface Quotation {

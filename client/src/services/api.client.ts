@@ -11,9 +11,10 @@ export const apiClient: AxiosInstance = axios.create({
 });
 
 // Request Interceptor: Attach JWT bearer token if available
-apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('dealflow_token');
+    if (config.url && config.baseURL === '/api' && config.url.startsWith('/api/')) {
+      config.url = config.url.slice(4);
+    }
+    const token = localStorage.getItem('dealflow_token') || localStorage.getItem('accessToken');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
