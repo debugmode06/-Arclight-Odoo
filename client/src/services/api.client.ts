@@ -1,30 +1,19 @@
-import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import { API_BASE_URL } from '@/constants';
-import { ApiResponse } from '@/types';
+import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 
-/**
- * Shared Axios HTTP client
- * Owner: Member 1
- *
- * All API modules should use this client instance.
- * It handles:
- * - Base URL
- * - Authorization header injection
- * - Response unwrapping
- * - 401 handling (token refresh — to be implemented by Member 1)
- */
-const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 15000,
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+export const apiClient: AxiosInstance = axios.create({
+  baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 15000,
 });
 
-// ─── Request Interceptor: Inject access token ─────────────────────────────
+// Request Interceptor: Attach JWT bearer token if available
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem('dealflow_token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -33,28 +22,17 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ─── Response Interceptor: Handle 401 and unwrap ─────────────────────────
+// Response Interceptor: Extract error messages uniformly
 apiClient.interceptors.response.use(
-  (response: AxiosResponse) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      // TODO: Member 1 — Implement token refresh flow
-      localStorage.removeItem('accessToken');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
+  (response) => response,
+  (error: AxiosError<{ error?: { message?: string; code?: string } }>) => {
+    const customMessage = error.response?.data?.error?.message || error.message || 'An unexpected error occurred';
+    return Promise.reject(new Error(customMessage));
   }
 );
 
-/**
- * Helper to extract data from standard API response shape
- */
-export function extractData<T>(response: AxiosResponse<ApiResponse<T>>): T {
-  if (!response.data.success || response.data.data === undefined) {
-    throw new Error(response.data.error?.message || 'API error');
-  }
+export function extractData<T>(response: AxiosResponse<{ success: boolean; data: T }>): T {
   return response.data.data;
 }
 
-export { apiClient };
 export default apiClient;

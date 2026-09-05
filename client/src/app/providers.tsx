@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type ReactNode } from 'react';
+import { AuthProvider } from '../modules/auth';
 
 // Configure TanStack Query client
 const queryClient = new QueryClient({
@@ -22,14 +23,13 @@ interface ProvidersProps {
 /**
  * Global providers wrapper.
  * Owner: Member 1
- *
- * Add global providers here (e.g., React Query, auth context, theme).
- * Keep this file minimal — one concern per provider.
  */
 export function Providers({ children }: ProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <AuthProvider>
+        {children}
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
