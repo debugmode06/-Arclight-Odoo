@@ -2,6 +2,12 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout';
 import { FulfillmentPage, InventoryPage } from '@/modules/fulfillment';
 import { BillingPage } from '@/modules/billing';
+import {
+  QuotationsPage,
+  QuotationBuilderPage,
+  QuotationDetailPage,
+} from '@/modules/quotations';
+import { ApprovalsPage, ApprovalDetailPage } from '@/modules/approvals';
 
 const PlaceholderPage = ({ title }: { title: string }) => (
   <div className="flex items-center justify-center min-h-[80vh]">
@@ -44,7 +50,19 @@ export const router = createBrowserRouter([
       },
       {
         path: 'quotations',
-        element: <PlaceholderPage title="Quotations Management" />,
+        element: <QuotationsPage />,
+      },
+      {
+        path: 'quotations/new',
+        element: <QuotationBuilderPage />,
+      },
+      {
+        path: 'quotations/:id',
+        element: <QuotationDetailPage />,
+      },
+      {
+        path: 'quotations/:id/edit',
+        element: <QuotationBuilderPage />,
       },
       {
         path: 'pipeline',
@@ -52,7 +70,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'approvals',
-        element: <PlaceholderPage title="Approvals Workflow" />,
+        element: <ApprovalsPage />,
+      },
+      {
+        path: 'approvals/:id',
+        element: <ApprovalDetailPage />,
       },
       {
         path: 'deal-twin',

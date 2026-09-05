@@ -16,6 +16,8 @@ export type QuotationStatus =
   | 'PENDING_APPROVAL'
   | 'APPROVED'
   | 'REJECTED'
+  | 'RETURNED'
+  | 'CANCELLED'
   | 'WON'
   | 'LOST'
   | 'EXPIRED';

@@ -7,7 +7,9 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
+    "noEmit": true,
     "ignoreDeprecations": "5.0",
+    "types": ["vite/client"],
     "paths": {
       "@/*": ["./src/*"],
       "@/app/*": ["./src/app/*"],
