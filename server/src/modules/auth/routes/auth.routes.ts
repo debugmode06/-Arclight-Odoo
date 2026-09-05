@@ -26,3 +26,4 @@ authRouter.post('/logout', requireAuth, logoutHandler);
 
 // GET /api/auth/me — Get current user profile
 authRouter.get('/me', requireAuth, meHandler);
+

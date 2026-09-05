@@ -13,12 +13,16 @@ import { ApprovalAction } from '../modules/approvals/models/approval-action.mode
 import { QuotationService } from '../modules/quotations/services/quotation.service';
 import { ApprovalService } from '../modules/approvals/services/approval.service';
 import { UserRole, CustomerTier } from '../shared';
+<<<<<<< HEAD
 
 export async function seedDemoUsers(): Promise<void> {
   return seed();
 }
 
 export async function seed(): Promise<void> {
+=======
+import { seedFulfillmentData } from './fulfillment.seed';
+>>>>>>> origin/feature/member3-fulfillment-billing
 
   validateEnv();
   await connectDatabase();
@@ -39,7 +43,7 @@ export async function seed(): Promise<void> {
   const hashedPassword = await hashPassword('Password123!');
   const legacyHashedPassword = await bcrypt.hash('password123', 10);
 
-  const [repUser, managerUser, financeUser, adminUser] = await User.create([
+  const [repUser, managerUser] = await User.create([
     {
       name: 'Sales Representative',
       firstName: 'Sales',
@@ -256,8 +260,8 @@ export async function seed(): Promise<void> {
 
   logger.info('Seed', 'Seeding demo quotations & approval workflows...');
 
-  // 1. Safe Quotation (Within Standard Limits - Draft)
-  const safeQuote = await QuotationService.createQuotation(
+  // 1. Safe Quotation
+  await QuotationService.createQuotation(
     {
       customerId: vertex._id.toString(),
       currency: 'USD',
@@ -274,7 +278,7 @@ export async function seed(): Promise<void> {
     repUser._id.toString()
   );
 
-  // 2. Medium-Risk Quotation (Pending Approval - Manager Step)
+  // 2. Medium-Risk Quotation
   const medQuote = await QuotationService.createQuotation(
     {
       customerId: novaTech._id.toString(),
@@ -302,7 +306,7 @@ export async function seed(): Promise<void> {
     role: UserRole.SALES_REP,
   });
 
-  // 3. High-Risk Quotation (Pending Approval - Manager + Finance Chain)
+  // 3. High-Risk Quotation
   const highQuote = await QuotationService.createQuotation(
     {
       customerId: acme._id.toString(),
@@ -330,7 +334,7 @@ export async function seed(): Promise<void> {
     role: UserRole.SALES_REP,
   });
 
-  // 4. Fully Approved Quotation with Action History
+  // 4. Fully Approved Quotation
   const approvedQuote = await QuotationService.createQuotation(
     {
       customerId: starlight._id.toString(),
@@ -360,6 +364,7 @@ export async function seed(): Promise<void> {
     );
   }
 
+<<<<<<< HEAD
   logger.info(
     'Seed',
     `Database successfully seeded!
@@ -369,6 +374,14 @@ export async function seed(): Promise<void> {
    - 4 Discount Governance Rules
    - 4 Demo Quotations (Safe Draft, Medium Risk, High Risk, Approved)`
   );
+=======
+  // Member 3 Fulfillment data seed
+  await seedFulfillmentData();
+
+  logger.info('Seed', 'Database successfully seeded for Member 2 and Member 3!');
+
+  await disconnectDatabase();
+>>>>>>> origin/feature/member3-fulfillment-billing
 }
 
 if (process.argv[1] && process.argv[1].includes('seed')) {

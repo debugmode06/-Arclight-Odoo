@@ -2,6 +2,8 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { LoginPage, ProtectedRoute } from '../modules/auth';
 import { AppLayout } from '../components/layout';
 import { DashboardPage } from './pages/DashboardPage';
+import { FulfillmentPage, InventoryPage } from '../modules/fulfillment';
+import { BillingPage } from '../modules/billing';
 import {
   QuotationsPage,
   QuotationBuilderPage,
@@ -85,6 +87,10 @@ export const router = createBrowserRouter([
         element: <QuotationBuilderPage />,
       },
       {
+        path: 'pipeline',
+        element: <PlaceholderPage title="Sales Pipeline" />,
+      },
+      {
         path: 'approvals',
         element: <ApprovalsPage />,
       },
@@ -98,11 +104,15 @@ export const router = createBrowserRouter([
       },
       {
         path: 'fulfillment',
-        element: <PlaceholderPage title="Warehouse & Fulfillment" />,
+        element: <FulfillmentPage />,
+      },
+      {
+        path: 'inventory',
+        element: <InventoryPage />,
       },
       {
         path: 'billing',
-        element: <PlaceholderPage title="Billing & Invoicing" />,
+        element: <BillingPage />,
       },
       {
         path: 'analytics',
@@ -115,7 +125,7 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // ─── Customer Portal Routes ─────────────────────────────────────────────
+  // ─── Customer Portal Routes (Member 4) ──────────────────────────────────
   {
     path: '/customer',
     children: [
@@ -151,7 +161,7 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // ─── Root redirect ──────────────────────────────────────────────────────
+  // ─── Root Redirect ──────────────────────────────────────────────────────
   {
     path: '/',
     element: <Navigate to="/app/dashboard" replace />,
@@ -163,4 +173,5 @@ export const router = createBrowserRouter([
     element: <PlaceholderPage title="404 — Page Not Found" />,
   },
 ]);
+
 

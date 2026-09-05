@@ -7,6 +7,7 @@ import { UserRole } from '../../../shared';
 
 export interface AuthTokens {
   token: string;
+  accessToken: string;
   refreshToken: string;
 }
 
@@ -31,7 +32,7 @@ export class AuthService {
       { expiresIn: env.JWT_REFRESH_EXPIRES_IN as jwt.SignOptions['expiresIn'] }
     );
 
-    return { token, refreshToken };
+    return { token, accessToken: token, refreshToken };
   }
 
   /**

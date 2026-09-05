@@ -1,34 +1,47 @@
-import { Router, Request, Response } from 'express';
-import { sendSuccess } from '../../../shared';
+import { Router } from 'express';
+import { fulfillmentController } from '../controllers/fulfillment.controller';
+import { requireAuth } from '../../../middleware/auth.middleware';
 
 export const fulfillmentRouter = Router();
 
-// GET /api/fulfillment
-fulfillmentRouter.get('/', (_req: Request, res: Response) => {
-  // TODO: Member 3 — implement fulfillment listing
-  sendSuccess(res, [], 'Fulfillment list endpoint — not yet implemented');
-});
+// Apply auth middleware
+fulfillmentRouter.use(requireAuth);
 
-// GET /api/fulfillment/inventory
-fulfillmentRouter.get('/inventory', (_req: Request, res: Response) => {
-  // TODO: Member 3 — implement inventory summary
-  sendSuccess(res, [], 'Inventory endpoint — not yet implemented');
-});
+// GET /api/fulfillment/current — Get current live MongoDB fulfillment state & audit logs
+fulfillmentRouter.get('/current', fulfillmentController.getLatestFulfillment);
 
-// GET /api/fulfillment/backorders
-fulfillmentRouter.get('/backorders', (_req: Request, res: Response) => {
-  // TODO: Member 3 — implement backorders listing
-  sendSuccess(res, [], 'Backorders endpoint — not yet implemented');
-});
+// GET /api/fulfillment — List fulfillment records
+fulfillmentRouter.get('/', fulfillmentController.listFulfillments);
 
-// GET /api/fulfillment/:id
-fulfillmentRouter.get('/:id', (_req: Request, res: Response) => {
-  // TODO: Member 3 — implement fulfillment detail
-  sendSuccess(res, null, 'Fulfillment detail endpoint — not yet implemented');
-});
+// GET /api/fulfillment/inventory — Get multi-warehouse stock overview matrix
+fulfillmentRouter.get('/inventory', fulfillmentController.getInventorySummary);
 
-// POST /api/fulfillment/:id/allocate
-fulfillmentRouter.post('/:id/allocate', (_req: Request, res: Response) => {
-  // TODO: Member 3 — implement stock allocation
-  sendSuccess(res, null, 'Allocate endpoint — not yet implemented');
-});
+// GET /api/fulfillment/backorders — List backorders from MongoDB
+fulfillmentRouter.get('/backorders', fulfillmentController.listBackorders);
+
+// GET /api/fulfillment/warehouses — List all warehouses
+fulfillmentRouter.get('/warehouses', fulfillmentController.listWarehouses);
+
+// POST /api/fulfillment/warehouses — Create new warehouse
+fulfillmentRouter.post('/warehouses', fulfillmentController.createWarehouse);
+
+// POST /api/fulfillment/recommend — Calculate smart stock allocation & split
+fulfillmentRouter.post('/recommend', fulfillmentController.recommendAllocation);
+
+// POST /api/fulfillment/allocate — Confirm and lock stock allocation in MongoDB
+fulfillmentRouter.post('/allocate', fulfillmentController.confirmAllocation);
+
+// POST /api/fulfillment/override — Server-validated manual warehouse allocation override
+fulfillmentRouter.post('/override', fulfillmentController.manualOverride);
+
+// POST /api/fulfillment/restore-split — Restore recommended split plan in MongoDB
+fulfillmentRouter.post('/restore-split', fulfillmentController.restoreSplit);
+
+// POST /api/fulfillment/inventory/receive — Receive stock arrival & auto-allocate backorders in MongoDB
+fulfillmentRouter.post('/inventory/receive', fulfillmentController.receiveStock);
+
+// PUT /api/fulfillment/inventory/:productId — Update stock level at warehouse
+fulfillmentRouter.put('/inventory/:productId', fulfillmentController.updateStock);
+
+// GET /api/fulfillment/:id — Get detailed fulfillment record
+fulfillmentRouter.get('/:id', fulfillmentController.getFulfillmentDetail);
