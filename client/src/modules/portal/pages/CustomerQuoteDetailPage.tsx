@@ -1,45 +1,44 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
-  ArrowLeft,
-  MessageSquare,
-  FileEdit,
-  TrendingDown,
-  CheckCircle2,
-  Clock,
   ShieldCheck,
   Building,
   Calendar,
   AlertCircle,
   Loader2,
-  Info,
+  Receipt,
+  Server,
+  RefreshCw,
+  TrendingDown,
+  LayoutGrid,
+  Lock,
+  CheckCircle2,
+  Clock,
+  MessageSquare,
 } from 'lucide-react';
 import { useCustomerQuoteDetail, usePortalActions } from '../hooks/useCustomerPortal';
-import { NegotiationTimeline } from '../components/NegotiationTimeline';
-import { LineCommentModal } from '../components/LineCommentModal';
-import { ChangeRequestModal } from '../components/ChangeRequestModal';
-import { CounterOfferModal } from '../components/CounterOfferModal';
+import { CustomerQuoteLineItem } from '../types/portal.types';
+import { LineItemCard } from '../components/LineItemCard';
+import { SmartNegotiationAssistant } from '../components/SmartNegotiationAssistant';
+import { CustomerPortalBottomNav } from '../components/CustomerPortalBottomNav';
 import { QuoteConfirmDialog } from '../components/QuoteConfirmDialog';
 
 export const CustomerQuoteDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const quoteId = id || '';
+  const quoteId = id || 'qt_1001';
 
   const { data: quote, isLoading, isError, error } = useCustomerQuoteDetail(quoteId);
   const portalActions = usePortalActions(quoteId);
 
-  // Modal States
-  const [isCommentModalOpen, setIsCommentModalOpen] = useState<boolean>(false);
-  const [selectedLineForComment, setSelectedLineForComment] = useState<string | undefined>(undefined);
-  const [isChangeRequestModalOpen, setIsChangeRequestModalOpen] = useState<boolean>(false);
-  const [isCounterOfferModalOpen, setIsCounterOfferModalOpen] = useState<boolean>(false);
+  const [focusedLineId, setFocusedLineId] = useState<string>('line_02');
+  const [bomFilter, setBomFilter] = useState<'ALL' | 'PENDING' | 'ACCEPTED'>('ALL');
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState<boolean>(false);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20 text-slate-500">
         <Loader2 className="w-8 h-8 animate-spin text-purple-600 mr-2" />
-        <span className="text-sm font-medium">Loading quotation details...</span>
+        <span className="text-sm font-medium">Loading RevOps deal workspace...</span>
       </div>
     );
   }
@@ -48,308 +47,284 @@ export const CustomerQuoteDetailPage: React.FC = () => {
     return (
       <div className="p-6 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm max-w-lg mx-auto mt-10">
         <AlertCircle className="w-6 h-6 mb-2 text-red-600" />
-        <h3 className="font-bold text-base">Access Restricted or Quote Not Found</h3>
+        <h3 className="font-bold text-base">Workspace Access Restricted</h3>
         <p className="text-xs mt-1 text-red-600">
-          {(error as Error)?.message || 'You do not have authorization to view this quotation or it does not exist.'}
+          {(error as Error)?.message || 'Quotation workspace not found.'}
         </p>
         <Link
           to="/customer/quotes"
-          className="inline-block mt-4 text-xs font-bold bg-red-600 text-white px-4 py-2 rounded-xl"
+          className="inline-block mt-4 text-xs font-bold bg-purple-700 text-white px-4 py-2 rounded-xl"
         >
-          Return to My Quotations
+          Back to Quotations List
         </Link>
       </div>
     );
   }
 
-  const handleOpenCommentForLine = (lineId?: string) => {
-    setSelectedLineForComment(lineId);
-    setIsCommentModalOpen(true);
+  const activeLine = quote.lines.find((l) => l.lineId === focusedLineId) || quote.lines[1] || quote.lines[0];
+  const currencySymbol = quote.currencySymbol || '₹';
+
+  const filteredLines = quote.lines.filter((line) => {
+    if (bomFilter === 'PENDING') return line.hasCounterOffer;
+    if (bomFilter === 'ACCEPTED') return line.statusTag === 'Accepted Line Price';
+    return true;
+  });
+
+  const handleFocusLine = (line: CustomerQuoteLineItem) => {
+    setFocusedLineId(line.lineId);
+  };
+
+  const handleAcceptLine = async (lineId: string) => {
+    const line = quote.lines.find((l) => l.lineId === lineId);
+    if (line) {
+      line.statusTag = 'Accepted Line Price';
+      line.statusTagColor = 'green';
+      line.hasCounterOffer = false;
+    }
+  };
+
+  const handleSubmitCounter = async (payload: { proposedDiscount: number; selectedTradeOffId?: string; justification?: string }) => {
+    await portalActions.submitCounterOffer({
+      proposedDiscount: payload.proposedDiscount,
+      reason: payload.justification || 'Submitted via Smart Negotiation Assistant Workspace',
+    });
+  };
+
+  const handleConfirmQuote = async () => {
+    await portalActions.confirmQuote({ termsAccepted: true });
+    setIsConfirmDialogOpen(false);
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Back Navigation & Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200">
-        <Link
-          to="/customer/quotes"
-          className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-600 hover:text-purple-600 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to My Quotations</span>
-        </Link>
-
-        {/* Customer Action Bar */}
-        <div className="flex flex-wrap items-center gap-2">
-          {quote.canNegotiate && (
-            <>
-              <button
-                onClick={() => handleOpenCommentForLine(undefined)}
-                className="flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-xs transition-all"
-              >
-                <MessageSquare className="w-4 h-4 text-indigo-600" />
-                <span>Line Comment</span>
-              </button>
-
-              <button
-                onClick={() => setIsChangeRequestModalOpen(true)}
-                className="flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-xs transition-all"
-              >
-                <FileEdit className="w-4 h-4 text-purple-600" />
-                <span>Request Change</span>
-              </button>
-
-              <button
-                onClick={() => setIsCounterOfferModalOpen(true)}
-                className="flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-xs transition-all"
-              >
-                <TrendingDown className="w-4 h-4 text-emerald-600" />
-                <span>Propose Counter-Discount</span>
-              </button>
-            </>
-          )}
-
-          {quote.canConfirm ? (
-            <button
-              onClick={() => setIsConfirmDialogOpen(true)}
-              className="flex items-center space-x-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-xl shadow-md shadow-emerald-200 transition-all"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Confirm Quotation</span>
-            </button>
-          ) : (
-            <span className="flex items-center space-x-1 px-4 py-2 text-xs font-bold text-emerald-800 bg-emerald-100 rounded-xl border border-emerald-200">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Quotation Confirmed</span>
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Quote Header Information Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-100">
-          <div>
+    <div className="space-y-6 pb-24 font-sans text-slate-900">
+      {/* Top Banner Header */}
+      <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="max-w-3xl space-y-2">
             <div className="flex items-center space-x-3">
-              <h1 className="text-2xl font-black text-slate-900">{quote.quotationNumber}</h1>
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-bold ${
-                  quote.status === 'CONFIRMED'
-                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                    : quote.status === 'UNDER NEGOTIATION'
-                    ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                    : 'bg-purple-100 text-purple-800 border border-purple-200'
-                }`}
-              >
-                {quote.status}
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                {quote.title}
+              </h1>
+              <span className="px-3 py-1 text-xs font-bold bg-purple-100 text-purple-800 rounded-full border border-purple-200 shrink-0">
+                {quote.roundTag}
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
-              <Building className="w-3.5 h-3.5" />
-              <span>Prepared for {quote.companyName} ({quote.customerName})</span>
+            <p className="text-xs text-slate-500 font-medium leading-relaxed">
+              {quote.subtitle}
             </p>
           </div>
 
-          <div className="flex items-center space-x-6 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
-            <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase block">Issue Date</span>
-              <span className="font-semibold text-slate-800">
-                {new Date(quote.createdAt).toLocaleDateString()}
-              </span>
-            </div>
-            <div className="h-6 w-px bg-slate-200" />
-            <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase block">Valid Until</span>
-              <span className="font-semibold text-slate-800 flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-purple-600" />
-                {new Date(quote.validUntil).toLocaleDateString()}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Customer-Visible Quote Line Items Table */}
-        <div className="mt-6">
-          <h3 className="text-sm font-bold text-slate-900 mb-3">Commercial Line Items</h3>
-
-          {/* Desktop Line Table */}
-          <div className="overflow-x-auto rounded-xl border border-slate-200">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3">Product / Service</th>
-                  <th className="px-4 py-3 text-center">Qty</th>
-                  <th className="px-4 py-3 text-right">Unit Price</th>
-                  <th className="px-4 py-3 text-right">Customer Discount</th>
-                  <th className="px-4 py-3 text-right">Line Total</th>
-                  {quote.canNegotiate && <th className="px-4 py-3 text-center">Item Comment</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
-                {quote.lines.map((line) => (
-                  <tr key={line.lineId} className="hover:bg-slate-50/50">
-                    <td className="px-4 py-3.5">
-                      <div className="font-bold text-slate-900">{line.productName}</div>
-                      {line.description && (
-                        <div className="text-[11px] text-slate-500 mt-0.5">{line.description}</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 text-center font-bold">{line.quantity}</td>
-                    <td className="px-4 py-3.5 text-right">${line.unitPrice.toLocaleString()}</td>
-                    <td className="px-4 py-3.5 text-right">
-                      {line.discountPercent > 0 ? (
-                        <span className="text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded">
-                          {line.discountPercent}% (${line.discountAmount.toLocaleString()})
-                        </span>
-                      ) : (
-                        <span className="text-slate-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 text-right font-black text-slate-900">
-                      ${line.lineTotal.toLocaleString()}
-                    </td>
-                    {quote.canNegotiate && (
-                      <td className="px-4 py-3.5 text-center">
-                        <button
-                          onClick={() => handleOpenCommentForLine(line.lineId)}
-                          className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                          title="Add comment for this item"
-                        >
-                          <MessageSquare className="w-4 h-4" />
-                        </button>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Financial Summary Calculation Card */}
-        <div className="mt-6 pt-6 border-t border-slate-100 flex flex-col sm:flex-row sm:items-start justify-between gap-6">
-          <div className="max-w-md text-xs text-slate-500 space-y-2">
-            <div className="flex items-center space-x-1.5 font-bold text-slate-700">
-              <ShieldCheck className="w-4 h-4 text-purple-600" />
-              <span>Customer Transparency Commitment</span>
-            </div>
-            <p>
-              Prices and terms listed are customer-sanitized commercial values. Confidential internal margin metrics and approval details are excluded for security.
-            </p>
-          </div>
-
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 w-full sm:w-72 space-y-2 text-xs">
-            <div className="flex justify-between text-slate-600">
-              <span>Subtotal</span>
-              <span className="font-semibold text-slate-900">${quote.subtotal.toLocaleString()}</span>
-            </div>
-            {quote.discountAmount > 0 && (
-              <div className="flex justify-between text-purple-700 font-medium">
-                <span>Applied Discount</span>
-                <span>-${quote.discountAmount.toLocaleString()}</span>
+          {/* Top Right Summary KPI Boxes */}
+          <div className="flex items-center space-x-4 self-start lg:self-auto shrink-0">
+            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 text-center min-w-[130px]">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Base Quoted Total</div>
+              <div className="text-lg font-black text-slate-900 mt-0.5">
+                {currencySymbol}{quote.baseQuotedTotal.toLocaleString()}
               </div>
-            )}
-            <div className="flex justify-between text-slate-600">
-              <span>Tax / VAT</span>
-              <span className="font-semibold text-slate-900">${quote.taxAmount.toLocaleString()}</span>
             </div>
-            <div className="pt-2 border-t border-slate-200 flex justify-between items-center font-black text-sm text-slate-900">
-              <span>Grand Total</span>
-              <span className="text-base text-purple-700 font-extrabold">
-                ${quote.total.toLocaleString()} {quote.currency}
-              </span>
+
+            <div className="bg-purple-50 p-3.5 rounded-2xl border border-purple-200 text-center min-w-[150px]">
+              <div className="text-[10px] font-bold text-purple-600 uppercase tracking-wider">Total with 18% GST</div>
+              <div className="text-lg font-black text-purple-900 mt-0.5">
+                {currencySymbol}{quote.totalWithTax.toLocaleString()}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* WOW FEATURE — Negotiation Timeline */}
-      <NegotiationTimeline events={quote.timeline} currentStatus={quote.status} />
-
-      {/* Customer Comments & Change Requests History Feed */}
-      {(quote.comments.length > 0 || quote.changeRequests.length > 0) && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-          <h3 className="text-base font-bold text-slate-900">Active Negotiation Feed</h3>
-
-          {/* Customer Line Comments */}
-          {quote.comments.length > 0 && (
-            <div className="space-y-3">
-              <div className="text-xs font-bold text-slate-500 uppercase">Comments</div>
-              {quote.comments.map((c) => (
-                <div key={c.id} className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs space-y-1">
-                  <div className="flex items-center justify-between font-bold text-slate-800">
-                    <span className="flex items-center gap-1.5">
-                      <MessageSquare className="w-3.5 h-3.5 text-indigo-600" />
-                      {c.authorName}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-normal">
-                      {new Date(c.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <p className="text-slate-600">{c.comment}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Change Requests Feed */}
-          {quote.changeRequests.length > 0 && (
-            <div className="space-y-3 pt-2">
-              <div className="text-xs font-bold text-slate-500 uppercase">Change Requests</div>
-              {quote.changeRequests.map((cr) => (
-                <div key={cr.id} className="p-3 bg-purple-50/50 border border-purple-100 rounded-xl text-xs space-y-1">
-                  <div className="flex items-center justify-between font-bold text-slate-800">
-                    <span className="text-purple-800">[{cr.type}] {cr.description}</span>
-                    <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-800 rounded">
-                      {cr.status}
-                    </span>
-                  </div>
-                  {cr.requestedValue && (
-                    <div className="text-[11px] text-purple-700 font-semibold">
-                      Target value: {cr.requestedValue}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+      {/* KPI Cards Row (4 Cards Grid) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Net Contract Value */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs relative">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500">Net Contract Value</span>
+            <Receipt className="w-4 h-4 text-purple-600" />
+          </div>
+          <div className="text-xl font-black text-slate-900 mt-2">
+            {currencySymbol}{quote.netContractValue.toLocaleString()}
+          </div>
+          <div className="flex items-center justify-between text-[11px] mt-2 pt-2 border-t border-slate-100">
+            <span className="text-slate-500">18% Statutory GST:</span>
+            <span className="font-extrabold text-slate-900">+{currencySymbol}{quote.taxAmount.toLocaleString()}</span>
+          </div>
         </div>
-      )}
 
-      {/* Interactive Modals */}
-      <LineCommentModal
-        isOpen={isCommentModalOpen}
-        onClose={() => setIsCommentModalOpen(false)}
-        onSubmit={portalActions.addComment}
-        lines={quote.lines}
-        defaultLineId={selectedLineForComment}
-        isSubmitting={portalActions.isAddingComment}
-      />
+        {/* Card 2: One-Time CapEx Items */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs relative">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500">One-Time CapEx Items</span>
+            <Server className="w-4 h-4 text-purple-600" />
+          </div>
+          <div className="text-xl font-black text-slate-900 mt-2">
+            {currencySymbol}{quote.oneTimeCapEx.toLocaleString()}
+          </div>
+          <div className="flex items-center justify-between text-[11px] mt-2 pt-2 border-t border-slate-100">
+            <span className="text-slate-500 truncate">Laptops (10) + Impl:</span>
+            <span className="px-2 py-0.5 text-[10px] font-extrabold bg-emerald-100 text-emerald-800 rounded-full">
+              83.8% of Total
+            </span>
+          </div>
+        </div>
 
-      <ChangeRequestModal
-        isOpen={isChangeRequestModalOpen}
-        onClose={() => setIsChangeRequestModalOpen(false)}
-        onSubmit={portalActions.submitChangeRequest}
-        lines={quote.lines}
-        isSubmitting={portalActions.isSubmittingChangeRequest}
-      />
+        {/* Card 3: Recurring OpEx SaaS */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs relative">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-500">Recurring OpEx SaaS (Annual)</span>
+            <RefreshCw className="w-4 h-4 text-purple-600" />
+          </div>
+          <div className="text-xl font-black text-slate-900 mt-2">
+            {currencySymbol}{quote.recurringOpExAnnual.toLocaleString()} <span className="text-xs font-normal text-slate-500">/ yr</span>
+          </div>
+          <div className="flex items-center justify-between text-[11px] mt-2 pt-2 border-t border-slate-100">
+            <span className="text-slate-500 truncate">Cloud RevOps & DealTwin™:</span>
+            <span className="font-bold text-slate-800">10 Seats Active</span>
+          </div>
+        </div>
 
-      <CounterOfferModal
-        isOpen={isCounterOfferModalOpen}
-        onClose={() => setIsCounterOfferModalOpen(false)}
-        onSubmit={portalActions.submitCounterOffer}
-        currentSubtotal={quote.subtotal}
-        currentDiscountAmount={quote.discountAmount}
-        isSubmitting={portalActions.isSubmittingCounterOffer}
-      />
+        {/* Card 4: Active Counter Delta */}
+        <div className="bg-white rounded-2xl border border-rose-200/80 bg-gradient-to-b from-rose-50/20 to-white p-4 shadow-xs relative">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-600">Active Counter Delta</span>
+            <span className="px-2 py-0.5 text-[10px] font-extrabold bg-rose-100 text-rose-800 rounded-full border border-rose-200">
+              {quote.pendingCountersCount} Items Pending
+            </span>
+          </div>
+          <div className="text-xl font-black text-rose-600 mt-2">
+            -{currencySymbol}{quote.activeCounterDelta.toLocaleString()} <span className="text-xs font-semibold text-slate-500">requested</span>
+          </div>
+          <div className="flex items-center justify-between text-[11px] mt-2 pt-2 border-t border-rose-100">
+            <span className="text-slate-500">Target Counter Total:</span>
+            <span className="font-extrabold text-slate-900">{currencySymbol}{quote.targetCounterTotal.toLocaleString()} (Base)</span>
+          </div>
+        </div>
+      </div>
 
+      {/* Main Workspace Layout (Two-Column Split) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column (8 of 12 cols = 66%) */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* Quotation Bill of Materials Header Bar */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center space-x-2">
+              <h2 className="text-base font-black text-slate-900">Quotation Bill of Materials</h2>
+              <span className="px-2.5 py-0.5 text-xs font-bold bg-slate-100 text-slate-700 rounded-full">
+                {quote.lineCount} Items
+              </span>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+                <button
+                  onClick={() => setBomFilter('ALL')}
+                  className={`px-3 py-1 rounded-lg transition-all ${
+                    bomFilter === 'ALL' ? 'bg-white text-slate-900 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  All Items ({quote.lines.length})
+                </button>
+                <button
+                  onClick={() => setBomFilter('PENDING')}
+                  className={`px-3 py-1 rounded-lg transition-all ${
+                    bomFilter === 'PENDING' ? 'bg-white text-purple-700 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Pending Counters ({quote.lines.filter((l) => l.hasCounterOffer).length})
+                </button>
+                <button
+                  onClick={() => setBomFilter('ACCEPTED')}
+                  className={`px-3 py-1 rounded-lg transition-all ${
+                    bomFilter === 'ACCEPTED' ? 'bg-white text-emerald-800 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Accepted ({quote.lines.filter((l) => l.statusTag === 'Accepted Line Price').length})
+                </button>
+              </div>
+
+              <div className="p-2 bg-slate-100 rounded-xl text-slate-500 cursor-pointer hover:bg-slate-200">
+                <LayoutGrid className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+
+          {/* Line Item Cards List */}
+          <div className="space-y-4">
+            {filteredLines.map((line) => (
+              <LineItemCard
+                key={line.lineId}
+                line={line}
+                currencySymbol={currencySymbol}
+                onFocusLine={handleFocusLine}
+                onAcceptLine={handleAcceptLine}
+                isFocused={line.lineId === activeLine.lineId}
+              />
+            ))}
+          </div>
+
+          {/* Negotiation Activity & Official Audit Log Card */}
+          <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <span>Negotiation Activity & Official Audit Log</span>
+              </h3>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Immutable Customer Log
+              </span>
+            </div>
+
+            <div className="relative pl-6 space-y-5 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+              {quote.auditLogs.map((log) => (
+                <div key={log.id} className="relative flex items-start space-x-3 text-xs">
+                  <div
+                    className={`absolute -left-6 top-1 w-4 h-4 rounded-full border-2 bg-white flex items-center justify-center ${
+                      log.isActiveSession ? 'border-purple-600 animate-ping' : 'border-slate-400'
+                    }`}
+                  >
+                    <div
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        log.isActiveSession ? 'bg-purple-600' : 'bg-slate-400'
+                      }`}
+                    />
+                  </div>
+
+                  <div className="flex-1 bg-slate-50/80 p-3 rounded-2xl border border-slate-100">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-slate-900">{log.event}</span>
+                      <span className="text-[10px] font-semibold text-slate-400">{log.timestamp}</span>
+                    </div>
+                    <p className="text-slate-600 leading-relaxed text-[11px]">{log.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column (4 of 12 cols = 34%) — Smart Negotiation Assistant */}
+        <div className="lg:col-span-4 sticky top-20">
+          <SmartNegotiationAssistant
+            activeLine={activeLine}
+            tradeOffs={quote.concessionTradeOffs}
+            currencySymbol={currencySymbol}
+            assignedRep={quote.assignedRep}
+            onSubmitCounter={handleSubmitCounter}
+            onAcceptLine={() => handleAcceptLine(activeLine.lineId)}
+            isSubmitting={portalActions.isSubmittingCounterOffer}
+          />
+        </div>
+      </div>
+
+      {/* Floating Bottom Navigation Pill Bar */}
+      <CustomerPortalBottomNav />
+
+      {/* Confirm Quotation Dialog */}
       <QuoteConfirmDialog
         isOpen={isConfirmDialogOpen}
         onClose={() => setIsConfirmDialogOpen(false)}
-        onConfirm={portalActions.confirmQuote}
+        onConfirm={handleConfirmQuote}
         quotationNumber={quote.quotationNumber}
-        totalAmount={quote.total}
-        currency={quote.currency}
+        totalAmount={quote.totalWithTax}
+        currency={quote.currencySymbol}
         isSubmitting={portalActions.isConfirmingQuote}
       />
     </div>

@@ -119,7 +119,7 @@ export const CustomerDashboardPage: React.FC = () => {
                 <div className="flex items-center space-x-4">
                   <div className="text-right">
                     <div className="text-xs font-extrabold text-slate-900">
-                      ${q.total.toLocaleString()} {q.currency}
+                      {(q.currencySymbol || q.currency || '₹')}{(q.totalWithTax || q.total || 0).toLocaleString()}
                     </div>
                     <span className="text-[10px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full">
                       {q.status}

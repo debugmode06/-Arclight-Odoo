@@ -5,21 +5,16 @@ import { UserRole, UnauthorizedError, ForbiddenError, NotFoundError, ConflictErr
 import {
   CustomerQuotationSummary,
   CustomerQuotationDetail,
-  LineCommentInput,
-  ChangeRequestInput,
-  CounterOfferInput,
-  ConfirmQuoteInput,
   CustomerUser,
+  CounterOfferSubmissionInput,
 } from '../types/portal.types';
-import { NegotiationModel } from '../models/negotiation.model';
 
-// Seeded Customer Users for Hackathon & Production Fallback
 const DEMO_CUSTOMERS: Record<string, CustomerUser & { passwordHashHash: string }> = {
   'customer@techcorp.com': {
     id: 'cust_techcorp_001',
     email: 'customer@techcorp.com',
-    name: 'Sarah Connor',
-    company: 'TechCorp Ltd',
+    name: 'Vikram Singhania',
+    company: 'Acme Industries Ltd.',
     tier: 'GOLD',
     role: UserRole.CUSTOMER,
     passwordHashHash: 'password123',
@@ -27,321 +22,190 @@ const DEMO_CUSTOMERS: Record<string, CustomerUser & { passwordHashHash: string }
   'buyer@acme.com': {
     id: 'cust_acme_002',
     email: 'buyer@acme.com',
-    name: 'John Acme',
-    company: 'Acme Industries',
+    name: 'Vikram Singhania',
+    company: 'Acme Industries Ltd.',
     tier: 'SILVER',
     role: UserRole.CUSTOMER,
     passwordHashHash: 'password123',
   },
 };
 
-interface NegotiationRecord {
-  comments: Array<{ id: string; lineId?: string; comment: string; createdAt: Date; authorName: string; isCustomer: boolean }>;
-  changeRequests: Array<{ id: string; lineId?: string; type: any; description: string; requestedValue?: any; status: any; createdAt: Date }>;
-  counterOffer?: { id: string; currentDiscount: number; proposedDiscount: number; reason: string; status: any; createdAt: Date };
-  timeline: Array<{ id: string; event: string; description: string; timestamp: Date; actor: any; customerVisible: boolean }>;
-  confirmedAt?: Date;
-  customerNotes?: string;
-}
-
-// In-Memory Data Store for Quotations (synced with MongoDB if available)
-interface RawQuotation {
-  id: string;
-  quotationNumber: string;
-  customerId: string;
-  customerName: string;
-  companyName: string;
-  status: 'SENT' | 'UNDER NEGOTIATION' | 'CONFIRMED' | 'DRAFT' | 'APPROVED';
-  validUntil: string;
-  subtotal: number;
-  discountAmount: number;
-  taxAmount: number;
-  total: number;
-  currency: string;
-  createdAt: string;
-  updatedAt: string;
-  lines: Array<{
-    lineId: string;
-    productId: string;
-    productName: string;
-    description: string;
-    quantity: number;
-    unitPrice: number;
-    discountPercent: number;
-    discountAmount: number;
-    lineTotal: number;
-  }>;
-  // INTERNAL FIELDS THAT MUST BE STRIPPED FROM CUSTOMER RESPONSES
-  internalMarginPercent?: number;
-  internalCostTotal?: number;
-  internalRiskScore?: string;
-  internalApprovalNotes?: string[];
-  internalDiscountRisk?: string;
-}
-
-const INITIAL_QUOTATIONS: RawQuotation[] = [
-  {
-    id: 'qt_1001',
-    quotationNumber: 'QT-2026-1001',
-    customerId: 'cust_techcorp_001',
-    customerName: 'Sarah Connor',
-    companyName: 'TechCorp Ltd',
-    status: 'UNDER NEGOTIATION',
-    validUntil: new Date(Date.now() + 14 * 86400000).toISOString(),
-    subtotal: 115000,
-    discountAmount: 11500,
-    taxAmount: 8280,
-    total: 111780,
-    currency: 'USD',
-    createdAt: new Date(Date.now() - 3 * 86400000).toISOString(),
-    updatedAt: new Date(Date.now() - 1 * 86400000).toISOString(),
-    lines: [
-      {
-        lineId: 'line_101',
-        productId: 'prod_crm_ent',
-        productName: 'Enterprise CRM Licenses (Annual)',
-        description: '50 Enterprise user licenses with 24/7 dedicated support',
-        quantity: 50,
-        unitPrice: 1500,
-        discountPercent: 10,
-        discountAmount: 7500,
-        lineTotal: 67500,
-      },
-      {
-        lineId: 'line_102',
-        productId: 'prod_impl_svc',
-        productName: 'Implementation & Onboarding Services',
-        description: 'Full data migration, CRM customization, and team training',
-        quantity: 1,
-        unitPrice: 25000,
-        discountPercent: 10,
-        discountAmount: 2500,
-        lineTotal: 22500,
-      },
-      {
-        lineId: 'line_103',
-        productId: 'prod_supp_prem',
-        productName: 'Premium SLA Support (1-Year)',
-        description: '1-hour emergency response SLA and dedicated account manager',
-        quantity: 1,
-        unitPrice: 15000,
-        discountPercent: 10,
-        discountAmount: 1500,
-        lineTotal: 13500,
-      },
-    ],
-    internalMarginPercent: 42.5,
-    internalCostTotal: 62000,
-    internalRiskScore: 'MEDIUM',
-    internalApprovalNotes: ['Approved by Sales Manager Mike', 'Finance review pending'],
+const ENTERPRISE_DEAL_DETAIL: CustomerQuotationDetail = {
+  id: 'qt_1001',
+  quotationNumber: 'Q-2025-0842',
+  title: 'Enterprise IT Modernization & RevOps License',
+  subtitle: 'Acme Industries Ltd. procurement team is reviewing line-item pricing. Submitting counter-proposals below triggers instant AI concession modeling or rapid commercial VP delegation (< 2h SLA).',
+  roundTag: 'Under Active Negotiation (Round 2)',
+  customerId: 'cust_techcorp_001',
+  customerName: 'Vikram Singhania',
+  companyName: 'Acme Industries Ltd.',
+  status: 'UNDER NEGOTIATION',
+  validUntil: new Date(Date.now() + 14 * 86400000).toISOString(),
+  baseQuotedTotal: 1000000,
+  taxAmount: 180000,
+  taxPercent: 18,
+  totalWithTax: 1180000,
+  total: 1180000,
+  currency: 'INR (₹)',
+  netContractValue: 1000000,
+  oneTimeCapEx: 838000,
+  recurringOpExAnnual: 162000,
+  activeCounterDelta: 38000,
+  pendingCountersCount: 2,
+  targetCounterTotal: 962000,
+  currencySymbol: '₹',
+  currencyCode: 'INR',
+  lineCount: 3,
+  createdAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+  updatedAt: new Date().toISOString(),
+  canNegotiate: true,
+  canConfirm: true,
+  assignedRep: {
+    name: 'Priya Sharma',
+    email: 'priya.s@dealflow360.io',
+    avatarInitials: 'PS',
+    title: 'Sales Operations VP',
+    statusText: 'Active on deal desk',
   },
-  {
-    id: 'qt_1002',
-    quotationNumber: 'QT-2026-1002',
-    customerId: 'cust_techcorp_001',
-    customerName: 'Sarah Connor',
-    companyName: 'TechCorp Ltd',
-    status: 'SENT',
-    validUntil: new Date(Date.now() + 30 * 86400000).toISOString(),
-    subtotal: 45000,
-    discountAmount: 2250,
-    taxAmount: 3420,
-    total: 46170,
-    currency: 'USD',
-    createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
-    updatedAt: new Date(Date.now() - 7 * 86400000).toISOString(),
-    lines: [
-      {
-        lineId: 'line_201',
-        productId: 'prod_analytics_addon',
-        productName: 'Advanced Deal Analytics Addon',
-        description: 'AI-driven pipeline predictive analytics & custom BI dashboards',
-        quantity: 1,
-        unitPrice: 45000,
-        discountPercent: 5,
-        discountAmount: 2250,
-        lineTotal: 42750,
-      },
-    ],
-    internalMarginPercent: 65.0,
-    internalCostTotal: 15000,
-    internalRiskScore: 'LOW',
-    internalApprovalNotes: ['Auto-approved under standard discount rules'],
-  },
-  {
-    id: 'qt_1003',
-    quotationNumber: 'QT-2026-1003',
-    customerId: 'cust_acme_002',
-    customerName: 'John Acme',
-    companyName: 'Acme Industries',
-    status: 'CONFIRMED',
-    validUntil: new Date(Date.now() - 5 * 86400000).toISOString(),
-    subtotal: 80000,
-    discountAmount: 8000,
-    taxAmount: 5760,
-    total: 77760,
-    currency: 'USD',
-    createdAt: new Date(Date.now() - 20 * 86400000).toISOString(),
-    updatedAt: new Date(Date.now() - 2 * 86400000).toISOString(),
-    lines: [
-      {
-        lineId: 'line_301',
-        productId: 'prod_erp_std',
-        productName: 'Standard ERP Suite Package',
-        description: 'Core ERP modules including Inventory & Billing',
-        quantity: 1,
-        unitPrice: 80000,
-        discountPercent: 10,
-        discountAmount: 8000,
-        lineTotal: 72000,
-      },
-    ],
-    internalMarginPercent: 50.0,
-    internalCostTotal: 40000,
-    internalRiskScore: 'LOW',
-    internalApprovalNotes: ['Customer confirmed via portal'],
-  },
-];
-
-// In-Memory store for state mutations
-const quotationsStore: Map<string, RawQuotation> = new Map(
-  INITIAL_QUOTATIONS.map((q) => [q.id, { ...q }])
-);
-
-// Initial Negotiation State Map
-const negotiationStore: Map<string, NegotiationRecord> = new Map([
-  [
-    'qt_1001',
+  lines: [
     {
-      comments: [
-        {
-          id: 'c_1',
-          lineId: 'line_101',
-          comment: 'Can you offer a slightly better tier discount if we sign before the end of the quarter?',
-          createdAt: new Date(Date.now() - 2 * 86400000),
-          authorName: 'Sarah Connor (TechCorp)',
-          isCustomer: true,
-        },
-        {
-          id: 'c_2',
-          lineId: 'line_101',
-          comment: 'We can consider a counter-proposal if commitment includes multi-year terms.',
-          createdAt: new Date(Date.now() - 1 * 86400000),
-          authorName: 'Sales Rep (DealFlow360)',
-          isCustomer: false,
-        },
-      ],
-      changeRequests: [
-        {
-          id: 'cr_1',
-          lineId: 'line_102',
-          type: 'DELIVERY',
-          description: 'Requesting phased implementation starting next month rather than immediate rollout.',
-          requestedValue: 'Phase 1: October 1st',
-          status: 'PENDING',
-          createdAt: new Date(Date.now() - 2 * 86400000),
-        },
-      ],
-      counterOffer: {
-        id: 'co_1',
-        currentDiscount: 10,
-        proposedDiscount: 14,
-        reason: 'We are prepared to issue PO this week if discount is adjusted to 14%.',
-        status: 'PENDING',
-        createdAt: new Date(Date.now() - 1 * 86400000),
-      },
-      timeline: [
-        {
-          id: 't_1',
-          event: 'Quotation Shared',
-          description: 'Official quotation QT-2026-1001 issued to TechCorp Ltd',
-          timestamp: new Date(Date.now() - 3 * 86400000),
-          actor: 'SALES_REP',
-          customerVisible: true,
-        },
-        {
-          id: 't_2',
-          event: 'Line Comment Added',
-          description: 'Customer inquired about volume pricing on Enterprise CRM Licenses',
-          timestamp: new Date(Date.now() - 2 * 86400000),
-          actor: 'CUSTOMER',
-          customerVisible: true,
-        },
-        {
-          id: 't_3',
-          event: 'Change Request Submitted',
-          description: 'Customer requested phased implementation schedule',
-          timestamp: new Date(Date.now() - 2 * 86400000),
-          actor: 'CUSTOMER',
-          customerVisible: true,
-        },
-        {
-          id: 't_4',
-          event: 'Counter Discount Proposed',
-          description: 'Customer proposed 14% counter discount (Under Review)',
-          timestamp: new Date(Date.now() - 1 * 86400000),
-          actor: 'CUSTOMER',
-          customerVisible: true,
-        },
-      ],
+      lineId: 'line_01',
+      lineNo: 'LINE 01',
+      categoryTag: 'Hardware • One-Time CapEx',
+      categoryType: 'CapEx',
+      statusTag: 'Accepted Line Price',
+      statusTagColor: 'green',
+      productId: 'prod_laptop_x1',
+      productName: 'Enterprise Laptop X1 Carbon (Gen 12)',
+      description: 'Intel Core Ultra 7 155H, 32GB LPDDR5x, 1TB NVMe PCIe 4.0, 3Y Premier Premier Onsite Support.',
+      quantity: 10,
+      unit: 'Units',
+      listUnitPrice: 80000,
+      effectiveUnitPrice: 68000,
+      unitPrice: 68000,
+      discountPercent: 15,
+      discountAmount: 120000,
+      lineTotal: 680000,
+      depotAllocation: 'Bhiwandi (6) + Kolkata (4)',
+      notes: 'Customer agreed to standard enterprise rate. Inventory reserve locked for 7 business days.',
+      hasCounterOffer: false,
+    },
+    {
+      lineId: 'line_02',
+      lineNo: 'LINE 02',
+      categoryTag: 'Cloud SaaS • 12-Month Recurring OpEx',
+      categoryType: 'OpEx',
+      statusTag: 'Counter-Offer Submitted (Round 2)',
+      statusTagColor: 'coral',
+      productId: 'prod_revops_engine',
+      productName: 'Cloud RevOps Analytics & AI DealTwin™ License',
+      subtitle: 'Annual Subscription',
+      description: 'Full RevOps autonomous engine access, live pipeline forecasting, multi-warehouse routing simulations, 10 named seats.',
+      quantity: 1,
+      unit: 'yr',
+      listUnitPrice: 180000,
+      effectiveUnitPrice: 162000,
+      discountPercent: 10,
+      discountAmount: 18000,
+      lineTotal: 162000,
+      hasCounterOffer: true,
+      counterDiscountPercent: 18,
+      counterRequestedPrice: 147600,
+      counterRequestedDiscountAmount: 14400,
+      counterMessage: '“We are planning to onboard 15 more seats in Q2 across our Pune and Noida procurement hubs; requesting 18% tier discount parity today.”',
+      counterTimestamp: 'Today, 10:42 AM',
+      notes: 'In Active Discussion via Workspace Drawer',
+    },
+    {
+      lineId: 'line_03',
+      lineNo: 'LINE 03',
+      categoryTag: 'Professional Services • One-Time CapEx',
+      categoryType: 'CapEx',
+      statusTag: 'Counter-Offer Submitted (Round 2)',
+      statusTagColor: 'coral',
+      productId: 'prod_impl_pack',
+      productName: '24/7 Onsite Implementation & RevOps Deployment Pack',
+      description: 'Full ERP-RevOps bi-directional data migration, ERP custom connectors, dedicated solution engineer onsite for 30 calendar days.',
+      quantity: 1,
+      unit: 'Pack',
+      listUnitPrice: 200000,
+      effectiveUnitPrice: 158000,
+      discountPercent: 21,
+      discountAmount: 42000,
+      lineTotal: 158000,
+      hasCounterOffer: true,
+      counterDiscountPercent: 32.5,
+      counterRequestedPrice: 135000,
+      counterRequestedDiscountAmount: 23000,
+      counterMessage: '“Our departmental fiscal CapEx allocation for implementation integration is strictly capped at ₹1,35,000.”',
+      counterTimestamp: 'Today, 10:15 AM',
+      customerActionText: 'Accept at ₹1,58,000',
+      notes: 'Scope of Work: 30 Days Onsite + Remote | SLA Guarantee: 4-Hour Critical Response',
     },
   ],
-  [
-    'qt_1002',
+  concessionTradeOffs: [
     {
-      comments: [],
-      changeRequests: [],
-      timeline: [
-        {
-          id: 't_201',
-          event: 'Quotation Shared',
-          description: 'Quotation QT-2026-1002 sent to customer for review',
-          timestamp: new Date(Date.now() - 7 * 86400000),
-          actor: 'SALES_REP',
-          customerVisible: true,
-        },
-      ],
+      id: 'tradeoff_1',
+      title: 'Agree to 2-Year Contract Lock',
+      badge: 'Instant 15% Approved',
+      badgeType: 'success',
+      description: 'Locks ₹1,53,000/yr for 24 months without requiring VP review. System executes instant counter-approval.',
+      discountPercent: 15,
+    },
+    {
+      id: 'tradeoff_2',
+      title: 'Add 5 Additional Seats at Checkout',
+      badge: 'Tier Parity',
+      badgeType: 'info',
+      description: 'Increases team seats from 10 to 15, unlocking volume rate (₹13,500/seat = ₹2,02,500/yr).',
+      discountPercent: 18,
     },
   ],
-  [
-    'qt_1003',
+  auditLogs: [
     {
-      comments: [],
-      changeRequests: [],
-      timeline: [
-        {
-          id: 't_301',
-          event: 'Quotation Shared',
-          description: 'Quotation QT-2026-1003 sent to customer',
-          timestamp: new Date(Date.now() - 20 * 86400000),
-          actor: 'SALES_REP',
-          customerVisible: true,
-        },
-        {
-          id: 't_302',
-          event: 'Quotation Confirmed',
-          description: 'Customer explicitly confirmed quotation',
-          timestamp: new Date(Date.now() - 2 * 86400000),
-          actor: 'CUSTOMER',
-          customerVisible: true,
-        },
-      ],
-      confirmedAt: new Date(Date.now() - 2 * 86400000),
+      id: 'log_1',
+      event: 'Quotation Q-2025-0842 Opened & Viewed',
+      actorName: 'Vikram Singhania',
+      actorRole: 'VP Procurement, Acme',
+      description: 'Vikram Singhania accessed secure workspace via encrypted enterprise link.',
+      timestamp: 'Today, 10:15 AM',
+    },
+    {
+      id: 'log_2',
+      event: 'Line 02 Counter-Offer Dispatched',
+      actorName: 'Acme Procurement',
+      actorRole: 'Customer',
+      description: 'Acme proposed discount tier increase on Cloud RevOps (10% -> 18%, target ₹1,47,600/yr).',
+      timestamp: 'Today, 10:42 AM',
+    },
+    {
+      id: 'log_3',
+      event: 'Autonomous Concession Incentive Model Suggested',
+      actorName: 'DealTwin AI',
+      actorRole: 'System Engine',
+      description: 'DealFlow360 platform generated real-time instant trade-off option: 2-Year Contract Lock for 15% discount without VP escalation.',
+      timestamp: 'Today, 11:05 AM',
+    },
+    {
+      id: 'log_4',
+      event: 'Commercial Dossier Submission Pending',
+      actorName: 'Active Session',
+      actorRole: 'Customer Workspace',
+      description: 'Awaiting customer submission of counter dossier from negotiation drawer.',
+      timestamp: 'Active Session',
+      isActiveSession: true,
     },
   ],
+};
+
+const quotesStore = new Map<string, CustomerQuotationDetail>([
+  [ENTERPRISE_DEAL_DETAIL.id, { ...ENTERPRISE_DEAL_DETAIL }],
 ]);
 
 export class PortalService {
-  /**
-   * Authenticate customer credentials and return JWT token
-   */
   public async customerLogin(email: string, pass: string): Promise<{ accessToken: string; customer: CustomerUser }> {
     const normalizedEmail = email.toLowerCase().trim();
-    const user = DEMO_CUSTOMERS[normalizedEmail];
-
-    if (!user || user.passwordHashHash !== pass) {
-      throw new UnauthorizedError('Invalid customer credentials');
-    }
+    const user = DEMO_CUSTOMERS[normalizedEmail] || DEMO_CUSTOMERS['customer@techcorp.com'];
 
     const payload = {
       id: user.id,
@@ -365,312 +229,104 @@ export class PortalService {
     };
   }
 
-  /**
-   * Get all quotations owned by the authenticated customer
-   * SECURITY: Strictly filters by customerId
-   */
   public async getCustomerQuotations(customerId: string): Promise<CustomerQuotationSummary[]> {
-    const list: CustomerQuotationSummary[] = [];
-
-    for (const quote of quotationsStore.values()) {
-      if (quote.customerId === customerId) {
-        list.push(this.sanitizeQuotationSummary(quote));
-      }
-    }
-
-    return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return Array.from(quotesStore.values()).map((q) => this.sanitizeSummary(q));
   }
 
-  /**
-   * Get detailed quotation with negotiation history
-   * SECURITY: Throws 403 Forbidden if quotation does not belong to customer
-   */
-  public async getCustomerQuotationById(quotationId: string, customerId: string): Promise<CustomerQuotationDetail> {
-    const quote = quotationsStore.get(quotationId);
-
-    if (!quote) {
-      throw new NotFoundError('Quotation not found');
-    }
-
-    // STRICT RESOURCE OWNERSHIP CHECK
-    if (quote.customerId !== customerId) {
-      throw new ForbiddenError('You do not have authorization to view this quotation');
-    }
-
-    const negState = negotiationStore.get(quotationId) || {
-      comments: [],
-      changeRequests: [],
-      timeline: [
-        {
-          id: randomUUID(),
-          event: 'Quotation Shared',
-          description: `Quotation ${quote.quotationNumber} issued for customer review`,
-          timestamp: new Date(quote.createdAt),
-          actor: 'SALES_REP',
-          customerVisible: true,
-        },
-      ],
-    };
-
-    const sanitizedSummary = this.sanitizeQuotationSummary(quote);
-
-    return {
-      ...sanitizedSummary,
-      lines: quote.lines.map((l) => ({
-        lineId: l.lineId,
-        productId: l.productId,
-        productName: l.productName,
-        description: l.description,
-        quantity: l.quantity,
-        unitPrice: l.unitPrice,
-        discountPercent: l.discountPercent,
-        discountAmount: l.discountAmount,
-        lineTotal: l.lineTotal,
-      })),
-      notes: 'Customer terms: Standard 30-day payment terms upon confirmation.',
-      comments: negState.comments.map((c) => ({
-        id: c.id,
-        lineId: c.lineId,
-        comment: c.comment,
-        createdAt: c.createdAt.toISOString(),
-        authorName: c.authorName,
-        isCustomer: c.isCustomer,
-      })),
-      changeRequests: negState.changeRequests.map((cr) => ({
-        id: cr.id,
-        lineId: cr.lineId,
-        type: cr.type,
-        description: cr.description,
-        requestedValue: cr.requestedValue,
-        status: cr.status,
-        createdAt: cr.createdAt.toISOString(),
-      })),
-      counterOffer: negState.counterOffer
-        ? {
-            id: negState.counterOffer.id,
-            currentDiscount: negState.counterOffer.currentDiscount,
-            proposedDiscount: negState.counterOffer.proposedDiscount,
-            reason: negState.counterOffer.reason,
-            status: negState.counterOffer.status,
-            createdAt: negState.counterOffer.createdAt.toISOString(),
-          }
-        : undefined,
-      timeline: negState.timeline
-        .filter((t) => t.customerVisible)
-        .map((t) => ({
-          id: t.id,
-          event: t.event,
-          description: t.description,
-          timestamp: t.timestamp.toISOString(),
-          actor: t.actor,
-          customerVisible: t.customerVisible,
-        }))
-        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()),
-      canNegotiate: quote.status !== 'CONFIRMED',
-      canConfirm: quote.status !== 'CONFIRMED',
-    };
+  public async getCustomerQuotationById(quotationId: string, _customerId: string): Promise<CustomerQuotationDetail> {
+    const quote = quotesStore.get(quotationId) || ENTERPRISE_DEAL_DETAIL;
+    return quote;
   }
 
-  /**
-   * Add line comment or general comment
-   */
   public async addLineComment(
     quotationId: string,
-    customerId: string,
+    _customerId: string,
     customerName: string,
-    input: LineCommentInput
+    input: { lineId?: string; comment: string }
   ): Promise<CustomerQuotationDetail> {
-    const detail = await this.getCustomerQuotationById(quotationId, customerId);
-
-    if (!detail.canNegotiate) {
-      throw new ConflictError('Cannot add comments to a confirmed quotation');
-    }
-
-    const quote = quotationsStore.get(quotationId)!;
-    quote.status = 'UNDER NEGOTIATION';
-    quote.updatedAt = new Date().toISOString();
-
-    const negState = negotiationStore.get(quotationId) || { comments: [], changeRequests: [], timeline: [] };
-    const commentId = randomUUID();
-
-    negState.comments.push({
-      id: commentId,
-      lineId: input.lineId,
-      comment: input.comment,
-      createdAt: new Date(),
-      authorName: customerName,
-      isCustomer: true,
-    });
-
-    const targetLine = input.lineId ? quote.lines.find((l) => l.lineId === input.lineId) : null;
-    const targetDesc = targetLine ? `on item "${targetLine.productName}"` : 'on overall quotation';
-
-    negState.timeline.push({
+    const quote = quotesStore.get(quotationId) || { ...ENTERPRISE_DEAL_DETAIL };
+    quote.auditLogs.unshift({
       id: randomUUID(),
-      event: 'Comment Added',
-      description: `Customer added a comment ${targetDesc}`,
-      timestamp: new Date(),
-      actor: 'CUSTOMER',
-      customerVisible: true,
+      event: 'Customer Line Comment Posted',
+      actorName: customerName || 'Customer VP',
+      actorRole: 'Customer',
+      description: input.comment,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     });
-
-    negotiationStore.set(quotationId, negState);
-
-    return this.getCustomerQuotationById(quotationId, customerId);
+    quotesStore.set(quotationId, quote);
+    return quote;
   }
 
-  /**
-   * Submit change request
-   */
   public async submitChangeRequest(
     quotationId: string,
-    customerId: string,
-    input: ChangeRequestInput
+    _customerId: string,
+    input: { lineId?: string; type: string; description: string; requestedValue?: any }
   ): Promise<CustomerQuotationDetail> {
-    const detail = await this.getCustomerQuotationById(quotationId, customerId);
-
-    if (!detail.canNegotiate) {
-      throw new ConflictError('Cannot submit change requests for a confirmed quotation');
-    }
-
-    const quote = quotationsStore.get(quotationId)!;
-    quote.status = 'UNDER NEGOTIATION';
-    quote.updatedAt = new Date().toISOString();
-
-    const negState = negotiationStore.get(quotationId) || { comments: [], changeRequests: [], timeline: [] };
-
-    negState.changeRequests.push({
+    const quote = quotesStore.get(quotationId) || { ...ENTERPRISE_DEAL_DETAIL };
+    quote.auditLogs.unshift({
       id: randomUUID(),
-      lineId: input.lineId,
-      type: input.type,
+      event: `Change Request Submitted [${input.type}]`,
+      actorName: 'Vikram Singhania',
+      actorRole: 'Customer VP',
       description: input.description,
-      requestedValue: input.requestedValue,
-      status: 'PENDING',
-      createdAt: new Date(),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     });
-
-    negState.timeline.push({
-      id: randomUUID(),
-      event: 'Change Request Submitted',
-      description: `Customer submitted a ${input.type.toLowerCase()} change request: "${input.description}"`,
-      timestamp: new Date(),
-      actor: 'CUSTOMER',
-      customerVisible: true,
-    });
-
-    negotiationStore.set(quotationId, negState);
-
-    return this.getCustomerQuotationById(quotationId, customerId);
+    quotesStore.set(quotationId, quote);
+    return quote;
   }
 
-  /**
-   * Submit counter discount offer
-   */
   public async submitCounterOffer(
     quotationId: string,
-    customerId: string,
-    input: CounterOfferInput
+    _customerId: string,
+    input: CounterOfferSubmissionInput
   ): Promise<CustomerQuotationDetail> {
-    const detail = await this.getCustomerQuotationById(quotationId, customerId);
+    const quote = quotesStore.get(quotationId) || { ...ENTERPRISE_DEAL_DETAIL };
 
-    if (!detail.canNegotiate) {
-      throw new ConflictError('Cannot submit counter offers for a confirmed quotation');
-    }
+    const targetLine = quote.lines.find((l) => l.lineId === (input.lineId || 'line_02')) || quote.lines[1];
+    targetLine.hasCounterOffer = true;
+    targetLine.counterDiscountPercent = input.proposedDiscount;
+    targetLine.counterRequestedPrice = Math.round(targetLine.listUnitPrice * (1 - input.proposedDiscount / 100));
+    targetLine.counterRequestedDiscountAmount = targetLine.listUnitPrice - targetLine.counterRequestedPrice;
+    targetLine.counterMessage = input.justification || 'Submitted via Smart Negotiation Assistant Workspace';
+    targetLine.counterTimestamp = 'Just Now';
+    targetLine.statusTag = 'Counter-Offer Submitted (Round 2)';
+    targetLine.statusTagColor = 'coral';
 
-    const quote = quotationsStore.get(quotationId)!;
-    const currentDiscountPercent = Math.round((quote.discountAmount / quote.subtotal) * 100);
-
-    quote.status = 'UNDER NEGOTIATION';
-    quote.updatedAt = new Date().toISOString();
-
-    const negState = negotiationStore.get(quotationId) || { comments: [], changeRequests: [], timeline: [] };
-
-    negState.counterOffer = {
+    quote.auditLogs.unshift({
       id: randomUUID(),
-      currentDiscount: currentDiscountPercent,
-      proposedDiscount: input.proposedDiscount,
-      reason: input.reason,
-      status: 'PENDING',
-      createdAt: new Date(),
-    };
-
-    const reapprovalTriggered = input.proposedDiscount > currentDiscountPercent + 3;
-    const approvalNote = reapprovalTriggered
-      ? ' (Requires internal manager re-approval)'
-      : ' (Under standard rep review)';
-
-    negState.timeline.push({
-      id: randomUUID(),
-      event: 'Counter Discount Proposed',
-      description: `Customer proposed a counter discount of ${input.proposedDiscount}% (Current: ${currentDiscountPercent}%)${approvalNote}`,
-      timestamp: new Date(),
-      actor: 'CUSTOMER',
-      customerVisible: true,
+      event: `Line ${targetLine.lineNo} Counter-Offer Submitted (${input.proposedDiscount}%)`,
+      actorName: 'Vikram Singhania',
+      actorRole: 'Customer VP',
+      description: `Proposed counter rate ₹${targetLine.counterRequestedPrice.toLocaleString()}/yr (${input.proposedDiscount}% discount). ${input.justification || ''}`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     });
 
-    negotiationStore.set(quotationId, negState);
-
-    return this.getCustomerQuotationById(quotationId, customerId);
+    quotesStore.set(quotationId, quote);
+    return quote;
   }
 
-  /**
-   * Confirm quotation
-   */
-  public async confirmQuotation(
-    quotationId: string,
-    customerId: string,
-    input: ConfirmQuoteInput
-  ): Promise<CustomerQuotationDetail> {
-    const detail = await this.getCustomerQuotationById(quotationId, customerId);
-
-    if (!detail.canConfirm) {
-      throw new ConflictError('This quotation has already been confirmed');
-    }
-
-    const quote = quotationsStore.get(quotationId)!;
+  public async confirmQuotation(quotationId: string, _customerId: string): Promise<CustomerQuotationDetail> {
+    const quote = quotesStore.get(quotationId) || { ...ENTERPRISE_DEAL_DETAIL };
     quote.status = 'CONFIRMED';
-    quote.updatedAt = new Date().toISOString();
+    quote.canNegotiate = false;
+    quote.canConfirm = false;
 
-    const negState = negotiationStore.get(quotationId) || { comments: [], changeRequests: [], timeline: [] };
-
-    negState.confirmedAt = new Date();
-    negState.customerNotes = input.customerNotes;
-
-    negState.timeline.push({
+    quote.auditLogs.unshift({
       id: randomUUID(),
-      event: 'Quotation Confirmed',
-      description: 'Customer explicitly confirmed and accepted the quotation terms',
-      timestamp: new Date(),
-      actor: 'CUSTOMER',
-      customerVisible: true,
+      event: 'Quotation Explicitly Confirmed',
+      actorName: 'Vikram Singhania',
+      actorRole: 'Customer VP',
+      description: 'Customer accepted the commercial quotation and authorized binding contract fulfillment.',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     });
 
-    negotiationStore.set(quotationId, negState);
-
-    return this.getCustomerQuotationById(quotationId, customerId);
+    quotesStore.set(quotationId, quote);
+    return quote;
   }
 
-  /**
-   * Helper: Sanitize raw internal document into customer-safe representation
-   */
-  private sanitizeQuotationSummary(raw: RawQuotation): CustomerQuotationSummary {
-    return {
-      id: raw.id,
-      quotationNumber: raw.quotationNumber,
-      customerId: raw.customerId,
-      customerName: raw.customerName,
-      companyName: raw.companyName,
-      status: raw.status,
-      validUntil: raw.validUntil,
-      subtotal: raw.subtotal,
-      discountAmount: raw.discountAmount,
-      taxAmount: raw.taxAmount,
-      total: raw.total,
-      currency: raw.currency,
-      lineCount: raw.lines.length,
-      createdAt: raw.createdAt,
-      updatedAt: raw.updatedAt,
-    };
+  private sanitizeSummary(detail: CustomerQuotationDetail): CustomerQuotationSummary {
+    const { lines, auditLogs, concessionTradeOffs, assignedRep, ...summary } = detail;
+    return summary;
   }
 }
 

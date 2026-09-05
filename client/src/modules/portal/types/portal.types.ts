@@ -9,15 +9,34 @@ export interface CustomerUser {
 
 export interface CustomerQuoteLineItem {
   lineId: string;
+  lineNo: string;
+  categoryTag: string; // e.g. "Hardware • One-Time CapEx"
+  categoryType: 'CapEx' | 'OpEx';
+  statusTag: 'Accepted Line Price' | 'Counter-Offer Submitted (Round 2)' | 'Pending Review' | 'In Discussion';
+  statusTagColor: 'green' | 'coral' | 'purple' | 'slate';
   productId: string;
   productName: string;
-  description?: string;
+  subtitle?: string;
+  description: string;
   quantity: number;
-  unitPrice: number;
+  unit: string;
+  listUnitPrice: number;
+  effectiveUnitPrice: number;
+  unitPrice?: number;
   discountPercent: number;
   discountAmount: number;
   lineTotal: number;
+  depotAllocation?: string;
   notes?: string;
+
+  // Counter offer on this specific line
+  hasCounterOffer?: boolean;
+  counterDiscountPercent?: number;
+  counterRequestedPrice?: number;
+  counterRequestedDiscountAmount?: number;
+  counterMessage?: string;
+  counterTimestamp?: string;
+  customerActionText?: string;
 }
 
 export interface NegotiationTimelineEvent {
@@ -29,47 +48,50 @@ export interface NegotiationTimelineEvent {
   customerVisible: boolean;
 }
 
-export interface CustomerLineComment {
+export interface AuditLogEntry {
   id: string;
-  lineId?: string;
-  comment: string;
-  createdAt: string;
-  authorName: string;
-  isCustomer: boolean;
-}
-
-export interface CustomerChangeRequest {
-  id: string;
-  lineId?: string;
-  type: 'QUANTITY' | 'PRODUCT' | 'COMMERCIAL' | 'DELIVERY' | 'OTHER';
+  event: string;
+  actorName: string;
+  actorRole: string;
   description: string;
-  requestedValue?: string | number;
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
-  createdAt: string;
+  timestamp: string;
+  isActiveSession?: boolean;
 }
 
-export interface CustomerCounterOffer {
+export interface ConcessionTradeOff {
   id: string;
-  currentDiscount: number;
-  proposedDiscount: number;
-  reason: string;
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'REVISION_REQUIRED';
-  createdAt: string;
+  title: string;
+  badge: string;
+  badgeType: 'success' | 'info';
+  description: string;
+  discountPercent: number;
 }
 
 export interface CustomerQuotationSummary {
   id: string;
   quotationNumber: string;
+  title: string;
+  subtitle: string;
+  roundTag: string;
   customerId: string;
   customerName: string;
   companyName: string;
   status: 'SENT' | 'UNDER NEGOTIATION' | 'CONFIRMED' | string;
   validUntil: string;
-  subtotal: number;
-  discountAmount: number;
+  baseQuotedTotal: number;
   taxAmount: number;
-  total: number;
-  currency: string;
+  taxPercent: number;
+  totalWithTax: number;
+  total?: number;
+  currency?: string;
+  netContractValue: number;
+  oneTimeCapEx: number;
+  recurringOpExAnnual: number;
+  activeCounterDelta: number;
+  pendingCountersCount: number;
+  targetCounterTotal: number;
+  currencySymbol: string;
+  currencyCode: string;
   lineCount: number;
   createdAt: string;
   updatedAt: string;
@@ -77,11 +99,15 @@ export interface CustomerQuotationSummary {
 
 export interface CustomerQuotationDetail extends CustomerQuotationSummary {
   lines: CustomerQuoteLineItem[];
-  notes?: string;
-  comments: CustomerLineComment[];
-  changeRequests: CustomerChangeRequest[];
-  counterOffer?: CustomerCounterOffer;
-  timeline: NegotiationTimelineEvent[];
+  auditLogs: AuditLogEntry[];
+  concessionTradeOffs: ConcessionTradeOff[];
+  assignedRep: {
+    name: string;
+    email: string;
+    avatarInitials: string;
+    title: string;
+    statusText: string;
+  };
   canNegotiate: boolean;
   canConfirm: boolean;
 }

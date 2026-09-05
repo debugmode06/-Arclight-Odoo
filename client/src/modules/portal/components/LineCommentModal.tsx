@@ -82,7 +82,7 @@ export const LineCommentModal: React.FC<Props> = ({
               <option value="">General (Overall Quotation)</option>
               {lines.map((item) => (
                 <option key={item.lineId} value={item.lineId}>
-                  {item.productName} ({item.quantity} × ${item.unitPrice.toLocaleString()})
+                  {item.productName} ({item.quantity} × ${(item.effectiveUnitPrice || item.unitPrice || 0).toLocaleString()})
                 </option>
               ))}
             </select>

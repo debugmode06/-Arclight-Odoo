@@ -141,7 +141,7 @@ export class PortalController {
       }
 
       const quoteId = req.params.id;
-      const updated = await portalService.confirmQuotation(quoteId, req.user.id, req.body);
+      const updated = await portalService.confirmQuotation(quoteId, req.user.id);
       sendSuccess(res, updated, 'Quotation confirmed successfully');
     } catch (err: any) {
       if (err.name === 'ForbiddenError' || err.statusCode === 403) {

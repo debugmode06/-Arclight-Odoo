@@ -1,4 +1,4 @@
-import { UserRole, QuotationStatus } from '../../../shared';
+import { UserRole } from '../../../shared';
 
 export interface CustomerUser {
   id: string;
@@ -11,67 +11,79 @@ export interface CustomerUser {
 
 export interface CustomerQuoteLineItem {
   lineId: string;
+  lineNo: string;
+  categoryTag: string;
+  categoryType: 'CapEx' | 'OpEx';
+  statusTag: 'Accepted Line Price' | 'Counter-Offer Submitted (Round 2)' | 'Pending Review' | 'In Discussion';
+  statusTagColor: 'green' | 'coral' | 'purple' | 'slate';
   productId: string;
   productName: string;
-  description?: string;
+  subtitle?: string;
+  description: string;
   quantity: number;
-  unitPrice: number;
+  unit: string;
+  listUnitPrice: number;
+  effectiveUnitPrice: number;
+  unitPrice?: number;
   discountPercent: number;
   discountAmount: number;
   lineTotal: number;
+  depotAllocation?: string;
   notes?: string;
+
+  hasCounterOffer?: boolean;
+  counterDiscountPercent?: number;
+  counterRequestedPrice?: number;
+  counterRequestedDiscountAmount?: number;
+  counterMessage?: string;
+  counterTimestamp?: string;
+  customerActionText?: string;
 }
 
-export interface NegotiationTimelineEvent {
+export interface AuditLogEntry {
   id: string;
   event: string;
+  actorName: string;
+  actorRole: string;
   description: string;
   timestamp: string;
-  actor: 'CUSTOMER' | 'SALES_REP' | 'SYSTEM' | 'MANAGER';
-  customerVisible: boolean;
+  isActiveSession?: boolean;
 }
 
-export interface CustomerLineComment {
+export interface ConcessionTradeOff {
   id: string;
-  lineId?: string;
-  comment: string;
-  createdAt: string;
-  authorName: string;
-  isCustomer: boolean;
-}
-
-export interface CustomerChangeRequest {
-  id: string;
-  lineId?: string;
-  type: 'QUANTITY' | 'PRODUCT' | 'COMMERCIAL' | 'DELIVERY' | 'OTHER';
+  title: string;
+  badge: string;
+  badgeType: 'success' | 'info';
   description: string;
-  requestedValue?: string | number;
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
-  createdAt: string;
-}
-
-export interface CustomerCounterOffer {
-  id: string;
-  currentDiscount: number;
-  proposedDiscount: number;
-  reason: string;
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'REVISION_REQUIRED';
-  createdAt: string;
+  discountPercent: number;
 }
 
 export interface CustomerQuotationSummary {
   id: string;
   quotationNumber: string;
+  title: string;
+  subtitle: string;
+  roundTag: string;
   customerId: string;
   customerName: string;
   companyName: string;
   status: 'SENT' | 'UNDER NEGOTIATION' | 'CONFIRMED' | string;
   validUntil: string;
-  subtotal: number;
-  discountAmount: number;
+  baseQuotedTotal: number;
   taxAmount: number;
-  total: number;
-  currency: string;
+  taxPercent: number;
+  totalWithTax: number;
+  total?: number;
+  currency?: string;
+  netContractValue: number;
+  oneTimeCapEx: number;
+  recurringOpExAnnual: number;
+  activeCounterDelta: number;
+  pendingCountersCount: number;
+  targetCounterTotal: number;
+  currencySymbol: string;
+  currencyCode: string;
   lineCount: number;
   createdAt: string;
   updatedAt: string;
@@ -79,38 +91,22 @@ export interface CustomerQuotationSummary {
 
 export interface CustomerQuotationDetail extends CustomerQuotationSummary {
   lines: CustomerQuoteLineItem[];
-  notes?: string;
-  comments: CustomerLineComment[];
-  changeRequests: CustomerChangeRequest[];
-  counterOffer?: CustomerCounterOffer;
-  timeline: NegotiationTimelineEvent[];
+  auditLogs: AuditLogEntry[];
+  concessionTradeOffs: ConcessionTradeOff[];
+  assignedRep: {
+    name: string;
+    email: string;
+    avatarInitials: string;
+    title: string;
+    statusText: string;
+  };
   canNegotiate: boolean;
   canConfirm: boolean;
 }
 
-export interface PortalLoginPayload {
-  email: string;
-  password: string;
-}
-
-export interface LineCommentInput {
+export interface CounterOfferSubmissionInput {
   lineId?: string;
-  comment: string;
-}
-
-export interface ChangeRequestInput {
-  lineId?: string;
-  type: 'QUANTITY' | 'PRODUCT' | 'COMMERCIAL' | 'DELIVERY' | 'OTHER';
-  description: string;
-  requestedValue?: string | number;
-}
-
-export interface CounterOfferInput {
   proposedDiscount: number;
-  reason: string;
-}
-
-export interface ConfirmQuoteInput {
-  termsAccepted: boolean;
-  customerNotes?: string;
+  selectedTradeOffId?: string;
+  justification?: string;
 }

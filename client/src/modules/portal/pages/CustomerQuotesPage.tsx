@@ -40,7 +40,7 @@ export const CustomerQuotesPage: React.FC = () => {
 
   filtered.sort((a, b) => {
     if (sortBy === 'amount') {
-      return b.total - a.total;
+      return (b.totalWithTax || b.total || 0) - (a.totalWithTax || a.total || 0);
     }
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
@@ -162,9 +162,9 @@ export const CustomerQuotesPage: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="font-black text-slate-900">
-                        ${quote.total.toLocaleString()}
+                        {quote.currencySymbol || '₹'}{(quote.totalWithTax || quote.total || 0).toLocaleString()}
                       </div>
-                      <div className="text-[10px] text-slate-400">{quote.currency}</div>
+                      <div className="text-[10px] text-slate-400">{quote.currencyCode || 'INR'}</div>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <Link
@@ -209,7 +209,7 @@ export const CustomerQuotesPage: React.FC = () => {
                   <div>
                     <div className="text-[10px] text-slate-400 uppercase font-bold">Total</div>
                     <div className="text-base font-black text-slate-900">
-                      ${quote.total.toLocaleString()} <span className="text-xs font-medium text-slate-500">{quote.currency}</span>
+                      {quote.currencySymbol || '₹'}{(quote.totalWithTax || quote.total || 0).toLocaleString()} <span className="text-xs font-medium text-slate-500">{quote.currencyCode || 'INR'}</span>
                     </div>
                   </div>
                   <Link
