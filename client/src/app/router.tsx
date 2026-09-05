@@ -1,4 +1,12 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import {
+  CustomerPortalLayout,
+  CustomerAuthGuard,
+  CustomerLoginPage,
+  CustomerQuotesPage,
+  CustomerQuoteDetailPage,
+  CustomerDashboardPage,
+} from '../modules/portal';
 
 // ─── Layout placeholders ─────────────────────────────────────────────────────
 // TODO: Member 1 — Replace lazy imports with actual pages as they are built
@@ -102,22 +110,35 @@ export const router = createBrowserRouter([
   // ─── Customer Portal Routes ─────────────────────────────────────────────
   {
     path: '/customer',
-    // TODO: Member 4 — Wrap with <CustomerPortalLayout /> + customer auth guard
     children: [
       {
         path: 'login',
-        element: <PlaceholderPage title="Customer Login" />,
-        // TODO: Member 4 — Replace with <CustomerLoginPage />
+        element: <CustomerLoginPage />,
       },
       {
-        path: 'quotes',
-        element: <PlaceholderPage title="My Quotes" />,
-        // TODO: Member 4 — Replace with <CustomerQuotesPage />
-      },
-      {
-        path: 'quotes/:id',
-        element: <PlaceholderPage title="Quote Detail" />,
-        // TODO: Member 4 — Replace with <CustomerQuoteDetailPage />
+        element: (
+          <CustomerAuthGuard>
+            <CustomerPortalLayout />
+          </CustomerAuthGuard>
+        ),
+        children: [
+          {
+            index: true,
+            element: <Navigate to="/customer/quotes" replace />,
+          },
+          {
+            path: 'dashboard',
+            element: <CustomerDashboardPage />,
+          },
+          {
+            path: 'quotes',
+            element: <CustomerQuotesPage />,
+          },
+          {
+            path: 'quotes/:id',
+            element: <CustomerQuoteDetailPage />,
+          },
+        ],
       },
     ],
   },
