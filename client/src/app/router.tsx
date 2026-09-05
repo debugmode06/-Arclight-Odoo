@@ -1,100 +1,90 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-
-// ─── Layout placeholders ─────────────────────────────────────────────────────
-// TODO: Member 1 — Replace lazy imports with actual pages as they are built
+import { AppLayout } from '@/components/layout';
+import { FulfillmentPage, InventoryPage } from '@/modules/fulfillment';
+import { BillingPage } from '@/modules/billing';
 
 const PlaceholderPage = ({ title }: { title: string }) => (
-  <div className="flex items-center justify-center min-h-screen bg-surface-50">
-    <div className="card text-center max-w-md w-full">
-      <h1 className="text-2xl font-bold gradient-text mb-2">{title}</h1>
-      <p className="text-gray-500 text-sm">This page is under construction.</p>
-      <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-primary-50 text-primary-600 rounded-full text-xs font-medium">
-        🚧 Module not yet implemented
+  <div className="flex items-center justify-center min-h-[80vh]">
+    <div className="bg-white rounded-2xl border border-purple-100 p-8 text-center max-w-md w-full shadow-sm">
+      <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl mx-auto mb-4 font-bold">
+        🚧
+      </div>
+      <h1 className="text-xl font-bold text-slate-900 mb-2">{title}</h1>
+      <p className="text-slate-500 text-sm">This module belongs to another team member or is currently pending development.</p>
+      <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-semibold border border-purple-200">
+        Module Under Construction
       </div>
     </div>
   </div>
 );
 
-/**
- * Application Router
- * Owner: Member 1
- *
- * PROTECTED ROUTES:
- * - /app/* routes require authentication (implement requireAuth guard)
- * - /app/admin/* routes require ADMIN role
- * - /customer/* routes use customer session (separate from internal users)
- *
- * ADDING ROUTES:
- * - Open a GitHub issue to request a route addition
- * - Member 1 implements the route entry
- * - Module owner provides the page component
- */
 export const router = createBrowserRouter([
   // ─── Public Auth Routes ─────────────────────────────────────────────────
   {
     path: '/login',
     element: <PlaceholderPage title="Login" />,
-    // TODO: Member 1 — Replace with <LoginPage />
   },
   {
     path: '/signup',
     element: <PlaceholderPage title="Sign Up" />,
-    // TODO: Member 1 — Replace with <SignupPage />
   },
 
-  // ─── Internal App Routes ────────────────────────────────────────────────
+  // ─── Internal App Routes (Wrapped in AppLayout) ────────────────────────
   {
     path: '/app',
-    // TODO: Member 1 — Wrap with <AppLayout /> + auth guard
+    element: <AppLayout />,
     children: [
       {
         index: true,
-        element: <Navigate to="/app/dashboard" replace />,
+        element: <Navigate to="/app/fulfillment" replace />,
       },
       {
         path: 'dashboard',
-        element: <PlaceholderPage title="Dashboard" />,
-        // TODO: Member 1 — Replace with <DashboardPage />
+        element: <PlaceholderPage title="Executive Dashboard" />,
       },
       {
         path: 'quotations',
-        element: <PlaceholderPage title="Quotations" />,
-        // TODO: Member 2 — Replace with <QuotationsPage />
+        element: <PlaceholderPage title="Quotations Management" />,
       },
       {
-        path: 'quotations/:id',
-        element: <PlaceholderPage title="Quotation Detail" />,
-        // TODO: Member 2 — Replace with <QuotationDetailPage />
+        path: 'pipeline',
+        element: <PlaceholderPage title="Sales Pipeline" />,
       },
       {
         path: 'approvals',
-        element: <PlaceholderPage title="Approvals" />,
-        // TODO: Member 2 — Replace with <ApprovalsPage />
+        element: <PlaceholderPage title="Approvals Workflow" />,
       },
       {
         path: 'deal-twin',
-        element: <PlaceholderPage title="DealTwin" />,
-        // TODO: Member 2 — Replace with <DealTwinPage />
+        element: <PlaceholderPage title="DealTwin Simulation Engine" />,
       },
       {
         path: 'fulfillment',
-        element: <PlaceholderPage title="Fulfillment" />,
-        // TODO: Member 3 — Replace with <FulfillmentPage />
+        element: <FulfillmentPage />,
+      },
+      {
+        path: 'inventory',
+        element: <InventoryPage />,
       },
       {
         path: 'billing',
-        element: <PlaceholderPage title="Billing" />,
-        // TODO: Member 3 — Replace with <BillingPage />
+        element: <BillingPage />,
+      },
+      {
+        path: 'customers',
+        element: <PlaceholderPage title="Customer Management" />,
       },
       {
         path: 'analytics',
-        element: <PlaceholderPage title="Analytics" />,
-        // TODO: Member 4 — Replace with <AnalyticsPage />
+        element: <PlaceholderPage title="Deal Health & Analytics" />,
+      },
+      {
+        path: 'reports',
+        element: <PlaceholderPage title="Revenue Reports" />,
       },
       {
         path: 'admin',
-        element: <PlaceholderPage title="Admin" />,
-        // TODO: Member 1 — Replace with <AdminPage /> (ADMIN role required)
+        element: <PlaceholderPage title="Admin Configurations" />,
       },
     ],
   },
@@ -102,30 +92,22 @@ export const router = createBrowserRouter([
   // ─── Customer Portal Routes ─────────────────────────────────────────────
   {
     path: '/customer',
-    // TODO: Member 4 — Wrap with <CustomerPortalLayout /> + customer auth guard
     children: [
       {
         path: 'login',
         element: <PlaceholderPage title="Customer Login" />,
-        // TODO: Member 4 — Replace with <CustomerLoginPage />
       },
       {
         path: 'quotes',
         element: <PlaceholderPage title="My Quotes" />,
-        // TODO: Member 4 — Replace with <CustomerQuotesPage />
-      },
-      {
-        path: 'quotes/:id',
-        element: <PlaceholderPage title="Quote Detail" />,
-        // TODO: Member 4 — Replace with <CustomerQuoteDetailPage />
       },
     ],
   },
 
-  // ─── Root redirect ──────────────────────────────────────────────────────
+  // ─── Root Redirect ──────────────────────────────────────────────────────
   {
     path: '/',
-    element: <Navigate to="/app/dashboard" replace />,
+    element: <Navigate to="/app/fulfillment" replace />,
   },
 
   // ─── 404 ────────────────────────────────────────────────────────────────

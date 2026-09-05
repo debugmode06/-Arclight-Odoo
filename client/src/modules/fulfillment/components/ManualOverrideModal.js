@@ -1,0 +1,15 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useState } from 'react';
+export const ManualOverrideModal = ({ isOpen, onClose, onApplyOverride }) => {
+    const [depotAQty, setDepotAQty] = useState(6);
+    const [depotBQty, setDepotBQty] = useState(4);
+    if (!isOpen)
+        return null;
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onApplyOverride(depotAQty, depotBQty);
+        onClose();
+    };
+    return (_jsx("div", { className: "fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50", children: _jsxs("div", { className: "bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-purple-100", children: [_jsxs("div", { className: "flex items-center justify-between border-b border-slate-100 pb-4 mb-4", children: [_jsxs("div", { children: [_jsx("h3", { className: "text-lg font-bold text-slate-900", children: "Manual Allocation Override" }), _jsx("p", { className: "text-xs text-slate-500", children: "Adjust stock quantities per depot manually" })] }), _jsx("button", { onClick: onClose, className: "text-slate-400 hover:text-slate-600 font-bold", children: "\u2715" })] }), _jsxs("form", { onSubmit: handleSubmit, className: "space-y-4", children: [_jsxs("div", { children: [_jsx("label", { className: "block text-xs font-bold text-slate-700 mb-1", children: "Main Warehouse (Bhiwandi Hub) Allocation" }), _jsx("input", { type: "number", min: "0", max: "14", value: depotAQty, onChange: (e) => setDepotAQty(parseInt(e.target.value) || 0), className: "w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-bold text-purple-900 focus:ring-2 focus:ring-purple-600 focus:outline-none" }), _jsx("span", { className: "text-[11px] text-slate-400", children: "Available: 14 units" })] }), _jsxs("div", { children: [_jsx("label", { className: "block text-xs font-bold text-slate-700 mb-1", children: "East Depot (Kolkata Terminal) Allocation" }), _jsx("input", { type: "number", min: "0", max: "9", value: depotBQty, onChange: (e) => setDepotBQty(parseInt(e.target.value) || 0), className: "w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-bold text-purple-900 focus:ring-2 focus:ring-purple-600 focus:outline-none" }), _jsx("span", { className: "text-[11px] text-slate-400", children: "Available: 9 units" })] }), _jsxs("div", { className: "p-3 bg-purple-50 rounded-xl text-xs text-purple-900 font-medium flex justify-between", children: [_jsx("span", { children: "Total Units Allocated:" }), _jsxs("strong", { className: "font-bold", children: [depotAQty + depotBQty, " / 10 Units Required"] })] }), _jsxs("div", { className: "flex justify-end gap-3 pt-4 border-t border-slate-100", children: [_jsx("button", { type: "button", onClick: onClose, className: "px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl", children: "Cancel" }), _jsx("button", { type: "submit", className: "px-5 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-xl shadow-md shadow-purple-600/20", children: "Save Manual Allocation" })] })] })] }) }));
+};
+//# sourceMappingURL=ManualOverrideModal.js.map

@@ -1,34 +1,23 @@
-import { Router, Request, Response } from 'express';
-import { sendSuccess } from '../../../shared';
+import { Router } from 'express';
+import { billingController } from '../controllers/billing.controller';
+import { requireAuth } from '../../../middleware/auth.middleware';
 
 export const billingRouter = Router();
 
-// GET /api/billing/invoices
-billingRouter.get('/invoices', (_req: Request, res: Response) => {
-  // TODO: Member 3 — implement invoice listing
-  sendSuccess(res, [], 'Invoices list endpoint — not yet implemented');
-});
+// Apply auth to all billing endpoints
+billingRouter.use(requireAuth);
 
-// GET /api/billing/invoices/:id
-billingRouter.get('/invoices/:id', (_req: Request, res: Response) => {
-  // TODO: Member 3 — implement invoice detail
-  sendSuccess(res, null, 'Invoice detail endpoint — not yet implemented');
-});
+// POST /api/billing/calculate — Real-time hybrid bill preview
+billingRouter.post('/calculate', billingController.calculateBill);
 
-// GET /api/billing/subscriptions
-billingRouter.get('/subscriptions', (_req: Request, res: Response) => {
-  // TODO: Member 3 — implement subscription listing
-  sendSuccess(res, [], 'Subscriptions list endpoint — not yet implemented');
-});
+// GET /api/billing/invoices — List invoices
+billingRouter.get('/invoices', billingController.listInvoices);
 
-// POST /api/billing/subscriptions
-billingRouter.post('/subscriptions', (_req: Request, res: Response) => {
-  // TODO: Member 3 — implement subscription creation
-  sendSuccess(res, null, 'Create subscription endpoint — not yet implemented');
-});
+// POST /api/billing/invoices — Generate & save invoice
+billingRouter.post('/invoices', billingController.createInvoice);
 
-// GET /api/billing/credit-notes
-billingRouter.get('/credit-notes', (_req: Request, res: Response) => {
-  // TODO: Member 3 — implement credit note listing
-  sendSuccess(res, [], 'Credit notes endpoint — not yet implemented');
-});
+// GET /api/billing/invoices/:id — Get invoice detail
+billingRouter.get('/invoices/:id', billingController.getInvoiceDetail);
+
+// GET /api/billing/subscriptions — List available subscription tiers
+billingRouter.get('/subscriptions', billingController.listSubscriptions);
