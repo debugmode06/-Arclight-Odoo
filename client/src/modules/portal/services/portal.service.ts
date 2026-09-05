@@ -55,7 +55,15 @@ async function portalFetch<T>(endpoint: string, options: RequestInit = {}): Prom
     headers,
   });
 
-  const body = await response.json();
+  let body: any;
+  try {
+    body = await response.json();
+  } catch {
+    if (!response.ok) {
+      throw new Error(`Backend server connection error (${response.status}). Please restart the dev server with 'npm run dev'.`);
+    }
+    throw new Error('Invalid response format received from server.');
+  }
 
   if (!response.ok || !body.success) {
     const errorMessage = body.error?.message || body.message || 'An error occurred';

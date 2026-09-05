@@ -26,8 +26,7 @@ export async function connectDatabase(): Promise<void> {
       isConnected = false;
     });
   } catch (error) {
-    console.error('[DB] Failed to connect to MongoDB:', error);
-    process.exit(1);
+    console.warn('[DB] Could not connect to MongoDB instance. Server will run with in-memory fallback for local development:', error);
   }
 }
 

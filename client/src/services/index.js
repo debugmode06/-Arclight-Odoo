@@ -1,0 +1,2 @@
+export { default as apiClient, extractData } from './api.client';
+//# sourceMappingURL=index.js.map
