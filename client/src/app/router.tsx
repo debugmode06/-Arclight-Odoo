@@ -1,13 +1,22 @@
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { LoginPage, ProtectedRoute } from '../modules/auth';
+import { AppLayout } from '../components/layout';
+import { DashboardPage } from './pages/DashboardPage';
 
 const PlaceholderPage = ({ title }: { title: string }) => (
-  <div className="flex items-center justify-center min-h-screen bg-surface-50">
-    <div className="card text-center max-w-md w-full">
-      <h1 className="text-2xl font-bold gradient-text mb-2">{title}</h1>
-      <p className="text-gray-500 text-sm">This page is under construction.</p>
-      <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-primary-50 text-primary-600 rounded-full text-xs font-medium">
-        🚧 Module placeholder
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="card text-center max-w-md w-full p-8 space-y-3">
+      <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center font-bold text-xl mx-auto">
+        🚧
+      </div>
+      <h1 className="text-xl font-bold text-gray-900">{title}</h1>
+      <p className="text-gray-500 text-sm">
+        This module is part of the DealFlow360 team roadmap.
+      </p>
+      <div className="pt-2">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-100 text-gray-600 rounded-full text-xs font-semibold">
+          Module ready for Member integration
+        </span>
       </div>
     </div>
   </div>
@@ -28,12 +37,12 @@ export const router = createBrowserRouter([
     element: <PlaceholderPage title="Sign Up" />,
   },
 
-  // ─── Internal App Routes (Protected) ──────────────────────────────────
+  // ─── Internal App Routes (Protected Shell Layout) ───────────────────────
   {
     path: '/app',
     element: (
       <ProtectedRoute>
-        <Outlet />
+        <AppLayout />
       </ProtectedRoute>
     ),
     children: [
@@ -43,11 +52,11 @@ export const router = createBrowserRouter([
       },
       {
         path: 'dashboard',
-        element: <PlaceholderPage title="Dashboard" />,
+        element: <DashboardPage />,
       },
       {
         path: 'quotations',
-        element: <PlaceholderPage title="Quotations" />,
+        element: <PlaceholderPage title="Quotations Management" />,
       },
       {
         path: 'quotations/:id',
@@ -55,27 +64,27 @@ export const router = createBrowserRouter([
       },
       {
         path: 'approvals',
-        element: <PlaceholderPage title="Approvals" />,
+        element: <PlaceholderPage title="Discount & Approval Governance" />,
       },
       {
         path: 'deal-twin',
-        element: <PlaceholderPage title="DealTwin" />,
+        element: <PlaceholderPage title="DealTwin AI Intelligence" />,
       },
       {
         path: 'fulfillment',
-        element: <PlaceholderPage title="Fulfillment" />,
+        element: <PlaceholderPage title="Warehouse & Fulfillment" />,
       },
       {
         path: 'billing',
-        element: <PlaceholderPage title="Billing" />,
+        element: <PlaceholderPage title="Billing & Invoicing" />,
       },
       {
         path: 'analytics',
-        element: <PlaceholderPage title="Analytics" />,
+        element: <PlaceholderPage title="Sales & Performance Analytics" />,
       },
       {
         path: 'admin',
-        element: <PlaceholderPage title="Admin" />,
+        element: <PlaceholderPage title="Admin & System Master Configuration" />,
       },
     ],
   },

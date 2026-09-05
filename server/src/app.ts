@@ -49,7 +49,19 @@ if (env.isDevelopment) {
   app.use(morgan('dev'));
 }
 
-// ─── Health Check ──────────────────────────────────────────────────────────
+// ─── Root & Health Check ───────────────────────────────────────────────────
+app.get('/', (_req, res) => {
+  res.json({
+    name: 'DealFlow360 API',
+    status: 'running',
+    environment: env.NODE_ENV,
+    api: '/api',
+    health: '/health',
+  });
+});
+
+
+
 app.get('/health', (_req, res) => {
   res.json({
     success: true,
@@ -60,6 +72,7 @@ app.get('/health', (_req, res) => {
     },
   });
 });
+
 
 // ─── API Routes ────────────────────────────────────────────────────────────
 // Member 1 namespaces

@@ -9,6 +9,12 @@ async function bootstrap(): Promise<void> {
   // 2. Connect to MongoDB
   await connectDatabase();
 
+  // 2.5 Auto-seed demo accounts in development
+  if (env.isDevelopment) {
+    const { seedDemoUsers } = await import('./seed');
+    await seedDemoUsers().catch((err) => logger.error('Seed', 'Auto-seed error', err));
+  }
+
   // 3. Start the Express server
   const server = app.listen(env.PORT, () => {
     logger.info('Server', `DealFlow360 API running on port ${env.PORT}`);
