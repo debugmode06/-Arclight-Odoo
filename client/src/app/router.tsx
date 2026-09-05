@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout';
 import { FulfillmentPage, InventoryPage } from '@/modules/fulfillment';
 import { BillingPage } from '@/modules/billing';
+import { LoginPage } from '@/modules/auth';
 import {
   QuotationsPage,
   QuotationBuilderPage,
@@ -36,11 +37,11 @@ export const router = createBrowserRouter([
   // ─── Public Auth Routes ─────────────────────────────────────────────────
   {
     path: '/login',
-    element: <PlaceholderPage title="Login" />,
+    element: <LoginPage />,
   },
   {
     path: '/signup',
-    element: <PlaceholderPage title="Sign Up" />,
+    element: <LoginPage />,
   },
 
   // ─── Internal App Routes (Wrapped in AppLayout) ────────────────────────
@@ -158,7 +159,7 @@ export const router = createBrowserRouter([
   // ─── Root Redirect ──────────────────────────────────────────────────────
   {
     path: '/',
-    element: <Navigate to="/app/fulfillment" replace />,
+    element: <Navigate to="/login" replace />,
   },
 
   // ─── 404 ────────────────────────────────────────────────────────────────

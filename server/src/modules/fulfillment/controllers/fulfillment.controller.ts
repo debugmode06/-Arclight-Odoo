@@ -4,6 +4,12 @@ import { sendSuccess, sendCreated } from '../../../shared';
 import { Warehouse } from '../models/warehouse.model';
 
 export class FulfillmentController {
+  public async getLatestFulfillment(req: Request, res: Response): Promise<void> {
+    const fulfillmentNumber = (req.query.fulfillmentNumber as string) || 'FUL-Q-2025-0842';
+    const result = await fulfillmentService.getLatestFulfillment(fulfillmentNumber);
+    sendSuccess(res, result, 'Latest MongoDB fulfillment state retrieved successfully');
+  }
+
   public async listFulfillments(_req: Request, res: Response): Promise<void> {
     const list = await fulfillmentService.listFulfillments();
     sendSuccess(res, list, 'Fulfillments retrieved successfully');
@@ -16,47 +22,81 @@ export class FulfillmentController {
   }
 
   public async recommendAllocation(req: Request, res: Response): Promise<void> {
-    const { items } = req.body;
-    const result = await fulfillmentService.recommendAllocation(items);
-    sendSuccess(res, result, 'Stock allocation split recommended successfully');
+    const { items, strategy, depotAQtyOverride, quotationId, customerId } = req.body;
+    const result = await fulfillmentService.recommendAllocation({
+      items: items || [{ productId: '64f1a2b3c4d5e6f7a8b9c101', quantity: 10 }],
+      strategy,
+      depotAQtyOverride,
+      quotationId,
+      customerId,
+    });
+    sendSuccess(res, result, 'Stock allocation split recommended from MongoDB successfully');
   }
 
   public async confirmAllocation(req: Request, res: Response): Promise<void> {
-    const { quotationId, customerId, allocations, isManualOverride, notes } = req.body;
-    const result = await fulfillmentService.confirmAllocation(
+    const {
+      fulfillmentNumber = 'FUL-Q-2025-0842',
+      quotationId = '64f1a2b3c4d5e6f7a8b9c201',
+      customerId = '64f1a2b3c4d5e6f7a8b9c202',
+      allocations,
+      strategy = 'DIRECT_SPLIT',
+      isManualOverride = false,
+      notes,
+    } = req.body;
+
+    const user = (req as any).user?.name || 'Vikram Mehta (Logistics Manager)';
+
+    const result = await fulfillmentService.confirmAndReleaseAllocation(
+      fulfillmentNumber,
       quotationId,
       customerId,
       allocations,
+      strategy,
       isManualOverride,
+      user,
       notes
     );
-    sendCreated(res, result, 'Stock allocation confirmed and locked successfully');
-  }
-
-  public async shipFulfillment(req: Request, res: Response): Promise<void> {
-    const { id } = req.params;
-    const result = await fulfillmentService.shipFulfillment(id);
-    sendSuccess(res, result, 'Fulfillment marked as shipped');
+    sendCreated(res, result, 'Stock allocation confirmed and locked in MongoDB successfully');
   }
 
   public async manualOverride(req: Request, res: Response): Promise<void> {
-    const { id } = req.params;
-    const { allocations, notes } = req.body;
-    const currentFulfillment = await fulfillmentService.getFulfillmentById(id);
+    const { fulfillmentNumber = 'FUL-Q-2025-0842', depotAQty, depotBQty, notes } = req.body;
+    const user = (req as any).user?.name || 'Vikram Mehta (Logistics Manager)';
 
-    const result = await fulfillmentService.confirmAllocation(
-      currentFulfillment.quotationId.toString(),
-      currentFulfillment.customerId.toString(),
-      allocations,
-      true,
-      notes || 'Manual warehouse manager override applied'
+    const result = await fulfillmentService.manualOverrideAllocation(
+      fulfillmentNumber,
+      Number(depotAQty),
+      Number(depotBQty),
+      user,
+      notes
     );
-    sendSuccess(res, result, 'Manual allocation override executed successfully');
+    sendSuccess(res, result, 'Manual allocation override validated and saved to MongoDB');
+  }
+
+  public async restoreSplit(req: Request, res: Response): Promise<void> {
+    const { fulfillmentNumber = 'FUL-Q-2025-0842' } = req.body;
+    const user = (req as any).user?.name || 'Vikram Mehta (Logistics Manager)';
+
+    const result = await fulfillmentService.restoreSuggestedSplitPlan(fulfillmentNumber, user);
+    sendSuccess(res, result, 'Suggested split plan restored in MongoDB successfully');
+  }
+
+  public async receiveStock(req: Request, res: Response): Promise<void> {
+    const { warehouseId, productId, receivedQty } = req.body;
+    const user = (req as any).user?.name || 'Vikram Mehta (Logistics Manager)';
+
+    const result = await fulfillmentService.receiveStock(
+      warehouseId,
+      productId,
+      Number(receivedQty),
+      user
+    );
+    sendSuccess(res, result, 'Stock received and backorders auto-allocated in MongoDB');
   }
 
   public async getInventorySummary(_req: Request, res: Response): Promise<void> {
     const result = await fulfillmentService.getInventorySummary();
-    sendSuccess(res, result, 'Inventory matrix retrieved successfully');
+    sendSuccess(res, result, 'Inventory matrix retrieved from MongoDB');
   }
 
   public async updateStock(req: Request, res: Response): Promise<void> {
@@ -69,39 +109,23 @@ export class FulfillmentController {
       reorderPoint,
       reorderQuantity
     );
-    sendSuccess(res, result, 'Inventory stock level updated successfully');
+    sendSuccess(res, result, 'Inventory stock level updated in MongoDB');
   }
 
   public async listBackorders(_req: Request, res: Response): Promise<void> {
     const result = await fulfillmentService.getBackorders();
-    sendSuccess(res, result, 'Backorders retrieved successfully');
-  }
-
-  public async receiveStock(req: Request, res: Response): Promise<void> {
-    const { warehouseId, productId, receivedQty } = req.body;
-    const result = await fulfillmentService.receiveStock(
-      warehouseId,
-      productId,
-      Number(receivedQty)
-    );
-    sendSuccess(res, result, 'Stock received and backorders auto-allocated successfully');
-  }
-
-  public async recommendConsolidation(req: Request, res: Response): Promise<void> {
-    const { items, hubWarehouseCode } = req.body;
-    const result = await fulfillmentService.recommendConsolidation(items, hubWarehouseCode);
-    sendSuccess(res, result, 'Consolidation analysis calculated successfully');
+    sendSuccess(res, result, 'Backorders retrieved from MongoDB');
   }
 
   public async createWarehouse(req: Request, res: Response): Promise<void> {
     const warehouse = new Warehouse(req.body);
     await warehouse.save();
-    sendCreated(res, warehouse, 'Warehouse created successfully');
+    sendCreated(res, warehouse, 'Warehouse created in MongoDB');
   }
 
   public async listWarehouses(_req: Request, res: Response): Promise<void> {
     const warehouses = await Warehouse.find();
-    sendSuccess(res, warehouses, 'Warehouses retrieved successfully');
+    sendSuccess(res, warehouses, 'Warehouses retrieved from MongoDB');
   }
 }
 

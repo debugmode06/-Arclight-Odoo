@@ -8,6 +8,13 @@ import {
 } from '../types/fulfillment.types';
 
 export const fulfillmentService = {
+  async getLatestFulfillment(fulfillmentNumber?: string): Promise<any> {
+    const res = await apiClient.get<ApiResponse<any>>('/fulfillment/current', {
+      params: { fulfillmentNumber },
+    });
+    return extractData(res);
+  },
+
   async getFulfillments(): Promise<FulfillmentRecord[]> {
     const res = await apiClient.get<ApiResponse<FulfillmentRecord[]>>('/fulfillment');
     return extractData(res);
@@ -18,15 +25,21 @@ export const fulfillmentService = {
     return extractData(res);
   },
 
-  async recommendAllocation(items: Array<{ productId: string; quantity: number }>): Promise<AllocationRecommendation> {
-    const res = await apiClient.post<ApiResponse<AllocationRecommendation>>('/fulfillment/recommend', { items });
+  async recommendAllocation(payload: {
+    items: Array<{ productId: string; quantity: number }>;
+    strategy?: 'DIRECT_SPLIT' | 'HUB_CONSOLIDATION';
+    depotAQtyOverride?: number;
+  }): Promise<any> {
+    const res = await apiClient.post<ApiResponse<any>>('/fulfillment/recommend', payload);
     return extractData(res);
   },
 
   async confirmAllocation(data: {
-    quotationId: string;
-    customerId: string;
+    fulfillmentNumber?: string;
+    quotationId?: string;
+    customerId?: string;
     allocations: Array<{ productId: string; warehouseId: string; quantityAllocated: number; shippingCost?: number }>;
+    strategy?: 'DIRECT_SPLIT' | 'HUB_CONSOLIDATION';
     isManualOverride?: boolean;
     notes?: string;
   }): Promise<FulfillmentRecord> {
@@ -39,8 +52,27 @@ export const fulfillmentService = {
     return extractData(res);
   },
 
-  async manualOverride(id: string, allocations: Array<{ productId: string; warehouseId: string; quantityAllocated: number }>, notes?: string): Promise<FulfillmentRecord> {
-    const res = await apiClient.post<ApiResponse<FulfillmentRecord>>(`/fulfillment/${id}/override`, { allocations, notes });
+  async manualOverride(data: {
+    fulfillmentNumber?: string;
+    depotAQty: number;
+    depotBQty: number;
+    notes?: string;
+  }): Promise<any> {
+    const res = await apiClient.post<ApiResponse<any>>('/fulfillment/override', data);
+    return extractData(res);
+  },
+
+  async restoreSplit(fulfillmentNumber?: string): Promise<any> {
+    const res = await apiClient.post<ApiResponse<any>>('/fulfillment/restore-split', { fulfillmentNumber });
+    return extractData(res);
+  },
+
+  async receiveStock(data: {
+    warehouseId: string;
+    productId: string;
+    receivedQty: number;
+  }): Promise<any> {
+    const res = await apiClient.post<ApiResponse<any>>('/fulfillment/inventory/receive', data);
     return extractData(res);
   },
 

@@ -30,6 +30,7 @@ export async function connectDatabase(): Promise<void> {
     if (env.isDevelopment && (error?.message?.includes('ECONNREFUSED') || !env.MONGODB_URI)) {
       console.warn('[DB] Local MongoDB not reachable. Initializing embedded MongoMemoryServer fallback...');
       try {
+        // @ts-ignore
         const { MongoMemoryServer } = await import('mongodb-memory-server');
         const mongod = await MongoMemoryServer.create();
         const uri = mongod.getUri();

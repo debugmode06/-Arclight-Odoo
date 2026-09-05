@@ -39,8 +39,11 @@ export function useWarehouses() {
 
 export function useRecommendAllocation() {
   return useMutation({
-    mutationFn: (items: Array<{ productId: string; quantity: number }>) =>
-      fulfillmentService.recommendAllocation(items),
+    mutationFn: (payload: {
+      items: Array<{ productId: string; quantity: number }>;
+      strategy?: 'DIRECT_SPLIT' | 'HUB_CONSOLIDATION';
+      depotAQtyOverride?: number;
+    }) => fulfillmentService.recommendAllocation(payload),
   });
 }
 
