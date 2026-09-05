@@ -12,6 +12,7 @@ export async function connectDatabase(): Promise<void> {
   try {
     const connection = await mongoose.connect(env.MONGODB_URI, {
       dbName: 'dealflow360',
+      serverSelectionTimeoutMS: 2500,
     });
 
     isConnected = true;
@@ -25,7 +26,21 @@ export async function connectDatabase(): Promise<void> {
       console.warn('[DB] MongoDB disconnected');
       isConnected = false;
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (env.isDevelopment && (error?.message?.includes('ECONNREFUSED') || !env.MONGODB_URI)) {
+      console.warn('[DB] Local MongoDB not reachable. Initializing embedded MongoMemoryServer fallback...');
+      try {
+        const { MongoMemoryServer } = await import('mongodb-memory-server');
+        const mongod = await MongoMemoryServer.create();
+        const uri = mongod.getUri();
+        const connection = await mongoose.connect(uri, { dbName: 'dealflow360' });
+        isConnected = true;
+        console.log(`[DB] Connected to embedded in-memory MongoDB: ${connection.connection.host}`);
+        return;
+      } catch (memErr) {
+        console.error('[DB] Embedded MongoMemoryServer failed:', memErr);
+      }
+    }
     console.error('[DB] Failed to connect to MongoDB:', error);
     process.exit(1);
   }

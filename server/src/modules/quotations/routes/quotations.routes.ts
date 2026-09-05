@@ -1,34 +1,37 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
+import { QuotationController } from '../controllers/quotation.controller';
+import { Customer } from '../../admin/models/customer.model';
+import { Product } from '../../admin/models/product.model';
 import { sendSuccess } from '../../../shared';
 
 export const quotationsRouter = Router();
 
-// GET /api/quotations
-quotationsRouter.get('/', (_req: Request, res: Response) => {
-  // TODO: Member 2 — implement quotation listing with filters
-  sendSuccess(res, [], 'Quotations list endpoint — not yet implemented');
+// Metadata helpers for Quotation Builder (Customer & Product pickers)
+quotationsRouter.get('/meta/customers', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const customers = await Customer.find({ isActive: true }).sort({ name: 1 }).lean();
+    sendSuccess(res, customers);
+  } catch (err) {
+    next(err);
+  }
 });
 
-// POST /api/quotations
-quotationsRouter.post('/', (_req: Request, res: Response) => {
-  // TODO: Member 2 — implement quotation creation
-  sendSuccess(res, null, 'Create quotation endpoint — not yet implemented');
+quotationsRouter.get('/meta/products', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const products = await Product.find({ isActive: true }).populate('categoryId').sort({ name: 1 }).lean();
+    sendSuccess(res, products);
+  } catch (err) {
+    next(err);
+  }
 });
 
-// GET /api/quotations/:id
-quotationsRouter.get('/:id', (_req: Request, res: Response) => {
-  // TODO: Member 2 — implement quotation detail
-  sendSuccess(res, null, 'Quotation detail endpoint — not yet implemented');
-});
+// Live calculation preview endpoint (pre-save calculation)
+quotationsRouter.post('/recalculate', QuotationController.recalculate);
 
-// PUT /api/quotations/:id
-quotationsRouter.put('/:id', (_req: Request, res: Response) => {
-  // TODO: Member 2 — implement quotation update
-  sendSuccess(res, null, 'Update quotation endpoint — not yet implemented');
-});
-
-// POST /api/quotations/:id/submit
-quotationsRouter.post('/:id/submit', (_req: Request, res: Response) => {
-  // TODO: Member 2 — implement submit for approval
-  sendSuccess(res, null, 'Submit quotation endpoint — not yet implemented');
-});
+// Standard Quotations CRUD
+quotationsRouter.get('/', QuotationController.list);
+quotationsRouter.post('/', QuotationController.create);
+quotationsRouter.get('/:id', QuotationController.getById);
+quotationsRouter.put('/:id', QuotationController.update);
+quotationsRouter.delete('/:id', QuotationController.delete);
+quotationsRouter.post('/:id/submit', QuotationController.submit);
