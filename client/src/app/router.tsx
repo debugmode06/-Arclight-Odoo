@@ -8,6 +8,14 @@ import {
   QuotationDetailPage,
 } from '../modules/quotations';
 import { ApprovalsPage, ApprovalDetailPage } from '../modules/approvals';
+import {
+  CustomerPortalLayout,
+  CustomerAuthGuard,
+  CustomerLoginPage,
+  CustomerQuotesPage,
+  CustomerQuoteDetailPage,
+  CustomerDashboardPage,
+} from '../modules/portal';
 
 const PlaceholderPage = ({ title }: { title: string }) => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -113,15 +121,32 @@ export const router = createBrowserRouter([
     children: [
       {
         path: 'login',
-        element: <PlaceholderPage title="Customer Login" />,
+        element: <CustomerLoginPage />,
       },
       {
-        path: 'quotes',
-        element: <PlaceholderPage title="My Quotes" />,
-      },
-      {
-        path: 'quotes/:id',
-        element: <PlaceholderPage title="Quote Detail" />,
+        element: (
+          <CustomerAuthGuard>
+            <CustomerPortalLayout />
+          </CustomerAuthGuard>
+        ),
+        children: [
+          {
+            index: true,
+            element: <Navigate to="/customer/quotes" replace />,
+          },
+          {
+            path: 'dashboard',
+            element: <CustomerDashboardPage />,
+          },
+          {
+            path: 'quotes',
+            element: <CustomerQuotesPage />,
+          },
+          {
+            path: 'quotes/:id',
+            element: <CustomerQuoteDetailPage />,
+          },
+        ],
       },
     ],
   },
@@ -138,3 +163,4 @@ export const router = createBrowserRouter([
     element: <PlaceholderPage title="404 — Page Not Found" />,
   },
 ]);
+
