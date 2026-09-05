@@ -83,8 +83,8 @@ export const SmartNegotiationAssistant: React.FC<Props> = ({
         <div className="bg-purple-50/80 border border-purple-200/80 rounded-2xl p-3.5 flex items-start space-x-3 text-xs text-purple-950">
           <Info className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
           <div className="leading-relaxed text-[11px]">
-            <span className="font-bold text-purple-900 block mb-0.5">Governance Delegation Notice</span>
-            Your proposed {discountPercent}% discount exceeds {assignedRep.name}'s standard rep ceiling. Upon submission, this dossier route to <span className="font-bold text-purple-900">VP Commercial Governance</span> with an autonomous SLA resolution of <span className="font-bold text-purple-900">&lt; 2 Hours</span>.
+            <span className="font-bold text-purple-900 block mb-0.5">Governance Notice</span>
+            Your requested discount is outside the standard approval range and requires commercial review. Expected response within 2 business hours.
           </div>
         </div>
 

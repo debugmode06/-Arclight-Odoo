@@ -265,10 +265,10 @@ export const CustomerQuoteDetailPage: React.FC = () => {
           <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <span>Negotiation Activity & Official Audit Log</span>
+                <span>Negotiation Timeline</span>
               </h3>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                Immutable Customer Log
+                Quotation Activity Log
               </span>
             </div>
 

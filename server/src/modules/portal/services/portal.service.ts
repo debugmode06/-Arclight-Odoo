@@ -34,12 +34,12 @@ const ENTERPRISE_DEAL_DETAIL: CustomerQuotationDetail = {
   id: 'qt_1001',
   quotationNumber: 'Q-2025-0842',
   title: 'Enterprise IT Modernization & RevOps License',
-  subtitle: 'Acme Industries Ltd. procurement team is reviewing line-item pricing. Submitting counter-proposals below triggers instant AI concession modeling or rapid commercial VP delegation (< 2h SLA).',
+  subtitle: 'Acme Industries Ltd. procurement team is reviewing line-item pricing. Submitting counter-proposals below triggers instant AI concession modeling or rapid commercial review (< 2h SLA).',
   roundTag: 'Under Active Negotiation (Round 2)',
   customerId: 'cust_techcorp_001',
   customerName: 'Vikram Singhania',
   companyName: 'Acme Industries Ltd.',
-  status: 'UNDER NEGOTIATION',
+  status: 'UNDER COMMERCIAL REVIEW',
   validUntil: new Date(Date.now() + 14 * 86400000).toISOString(),
   baseQuotedTotal: 1000000,
   taxAmount: 180000,
@@ -61,10 +61,10 @@ const ENTERPRISE_DEAL_DETAIL: CustomerQuotationDetail = {
   canNegotiate: true,
   canConfirm: true,
   assignedRep: {
-    name: 'Priya Sharma',
-    email: 'priya.s@dealflow360.io',
-    avatarInitials: 'PS',
-    title: 'Sales Operations VP',
+    name: 'Commercial Support Desk',
+    email: 'support@dealflow360.io',
+    avatarInitials: 'CS',
+    title: 'Sales Operations',
     statusText: 'Active on deal desk',
   },
   lines: [
@@ -105,6 +105,7 @@ const ENTERPRISE_DEAL_DETAIL: CustomerQuotationDetail = {
       unit: 'yr',
       listUnitPrice: 180000,
       effectiveUnitPrice: 162000,
+      unitPrice: 162000,
       discountPercent: 10,
       discountAmount: 18000,
       lineTotal: 162000,
@@ -130,6 +131,7 @@ const ENTERPRISE_DEAL_DETAIL: CustomerQuotationDetail = {
       unit: 'Pack',
       listUnitPrice: 200000,
       effectiveUnitPrice: 158000,
+      unitPrice: 158000,
       discountPercent: 21,
       discountAmount: 42000,
       lineTotal: 158000,
@@ -149,7 +151,7 @@ const ENTERPRISE_DEAL_DETAIL: CustomerQuotationDetail = {
       title: 'Agree to 2-Year Contract Lock',
       badge: 'Instant 15% Approved',
       badgeType: 'success',
-      description: 'Locks ₹1,53,000/yr for 24 months without requiring VP review. System executes instant counter-approval.',
+      description: 'Locks ₹1,53,000/yr for 24 months. System executes instant counter-approval.',
       discountPercent: 15,
     },
     {
@@ -180,18 +182,18 @@ const ENTERPRISE_DEAL_DETAIL: CustomerQuotationDetail = {
     },
     {
       id: 'log_3',
-      event: 'Autonomous Concession Incentive Model Suggested',
-      actorName: 'DealTwin AI',
-      actorRole: 'System Engine',
-      description: 'DealFlow360 platform generated real-time instant trade-off option: 2-Year Contract Lock for 15% discount without VP escalation.',
+      event: 'Request Under Commercial Review',
+      actorName: 'Commercial Operations',
+      actorRole: 'System',
+      description: 'Your requested discount is outside the standard approval range and is under commercial review. Expected response within 2 business hours.',
       timestamp: 'Today, 11:05 AM',
     },
     {
       id: 'log_4',
-      event: 'Commercial Dossier Submission Pending',
+      event: 'Commercial Review Session Active',
       actorName: 'Active Session',
       actorRole: 'Customer Workspace',
-      description: 'Awaiting customer submission of counter dossier from negotiation drawer.',
+      description: 'Awaiting commercial team decision on counter offer submission.',
       timestamp: 'Active Session',
       isActiveSession: true,
     },
@@ -230,57 +232,88 @@ export class PortalService {
   }
 
   public async getCustomerQuotations(customerId: string): Promise<CustomerQuotationSummary[]> {
-    return Array.from(quotesStore.values()).map((q) => this.sanitizeSummary(q));
+    const customerQuotes = Array.from(quotesStore.values()).filter(
+      (q) => q.customerId === customerId
+    );
+    return customerQuotes.map((q) => this.sanitizeSummary(q));
   }
 
-  public async getCustomerQuotationById(quotationId: string, _customerId: string): Promise<CustomerQuotationDetail> {
-    const quote = quotesStore.get(quotationId) || ENTERPRISE_DEAL_DETAIL;
+  public async getCustomerQuotationById(quotationId: string, customerId: string): Promise<CustomerQuotationDetail> {
+    const quote = quotesStore.get(quotationId);
+
+    if (!quote) {
+      throw new NotFoundError('Quotation not found');
+    }
+
+    // STRICT CUSTOMER RESOURCE OWNERSHIP VALIDATION
+    if (quote.customerId !== customerId) {
+      throw new ForbiddenError('You do not have permission to access this quotation');
+    }
+
     return quote;
   }
 
   public async addLineComment(
     quotationId: string,
-    _customerId: string,
+    customerId: string,
     customerName: string,
     input: { lineId?: string; comment: string }
   ): Promise<CustomerQuotationDetail> {
-    const quote = quotesStore.get(quotationId) || { ...ENTERPRISE_DEAL_DETAIL };
+    const quote = await this.getCustomerQuotationById(quotationId, customerId);
+
+    if (!quote.canNegotiate) {
+      throw new ConflictError('Cannot add comments to a confirmed quotation');
+    }
+
     quote.auditLogs.unshift({
       id: randomUUID(),
-      event: 'Customer Line Comment Posted',
-      actorName: customerName || 'Customer VP',
+      event: 'Customer Comment Added',
+      actorName: customerName || 'Customer',
       actorRole: 'Customer',
       description: input.comment,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     });
+
     quotesStore.set(quotationId, quote);
     return quote;
   }
 
   public async submitChangeRequest(
     quotationId: string,
-    _customerId: string,
+    customerId: string,
     input: { lineId?: string; type: string; description: string; requestedValue?: any }
   ): Promise<CustomerQuotationDetail> {
-    const quote = quotesStore.get(quotationId) || { ...ENTERPRISE_DEAL_DETAIL };
+    const quote = await this.getCustomerQuotationById(quotationId, customerId);
+
+    if (!quote.canNegotiate) {
+      throw new ConflictError('Cannot submit change requests for a confirmed quotation');
+    }
+
+    quote.status = 'UNDER COMMERCIAL REVIEW';
+
     quote.auditLogs.unshift({
       id: randomUUID(),
       event: `Change Request Submitted [${input.type}]`,
       actorName: 'Vikram Singhania',
-      actorRole: 'Customer VP',
-      description: input.description,
+      actorRole: 'Customer',
+      description: `${input.description}. Request is under commercial review. Expected response within 2 business hours.`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     });
+
     quotesStore.set(quotationId, quote);
     return quote;
   }
 
   public async submitCounterOffer(
     quotationId: string,
-    _customerId: string,
+    customerId: string,
     input: CounterOfferSubmissionInput
   ): Promise<CustomerQuotationDetail> {
-    const quote = quotesStore.get(quotationId) || { ...ENTERPRISE_DEAL_DETAIL };
+    const quote = await this.getCustomerQuotationById(quotationId, customerId);
+
+    if (!quote.canNegotiate) {
+      throw new ConflictError('Cannot submit counter offer for a confirmed quotation');
+    }
 
     const targetLine = quote.lines.find((l) => l.lineId === (input.lineId || 'line_02')) || quote.lines[1];
     targetLine.hasCounterOffer = true;
@@ -292,12 +325,14 @@ export class PortalService {
     targetLine.statusTag = 'Counter-Offer Submitted (Round 2)';
     targetLine.statusTagColor = 'coral';
 
+    quote.status = 'UNDER COMMERCIAL REVIEW';
+
     quote.auditLogs.unshift({
       id: randomUUID(),
-      event: `Line ${targetLine.lineNo} Counter-Offer Submitted (${input.proposedDiscount}%)`,
+      event: `Line ${targetLine.lineNo} Counter-Offer Dispatched (${input.proposedDiscount}%)`,
       actorName: 'Vikram Singhania',
-      actorRole: 'Customer VP',
-      description: `Proposed counter rate ₹${targetLine.counterRequestedPrice.toLocaleString()}/yr (${input.proposedDiscount}% discount). ${input.justification || ''}`,
+      actorRole: 'Customer',
+      description: `Proposed counter rate ₹${targetLine.counterRequestedPrice.toLocaleString()}/yr (${input.proposedDiscount}% discount). Your requested discount is outside standard approval range and is under commercial review. Expected response within 2 business hours.`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     });
 
@@ -305,18 +340,23 @@ export class PortalService {
     return quote;
   }
 
-  public async confirmQuotation(quotationId: string, _customerId: string): Promise<CustomerQuotationDetail> {
-    const quote = quotesStore.get(quotationId) || { ...ENTERPRISE_DEAL_DETAIL };
+  public async confirmQuotation(quotationId: string, customerId: string): Promise<CustomerQuotationDetail> {
+    const quote = await this.getCustomerQuotationById(quotationId, customerId);
+
+    if (!quote.canConfirm) {
+      throw new ConflictError('Quotation has already been confirmed');
+    }
+
     quote.status = 'CONFIRMED';
     quote.canNegotiate = false;
     quote.canConfirm = false;
 
     quote.auditLogs.unshift({
       id: randomUUID(),
-      event: 'Quotation Explicitly Confirmed',
+      event: 'Quotation Confirmed',
       actorName: 'Vikram Singhania',
-      actorRole: 'Customer VP',
-      description: 'Customer accepted the commercial quotation and authorized binding contract fulfillment.',
+      actorRole: 'Customer',
+      description: 'Customer explicitly confirmed and accepted the quotation terms.',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     });
 
