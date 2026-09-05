@@ -1,4 +1,11 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import {
+  QuotationsPage,
+  QuotationBuilderPage,
+  QuotationDetailPage,
+} from '@/modules/quotations';
+import { ApprovalsPage, ApprovalDetailPage } from '@/modules/approvals';
+import { AppLayout } from '@/components/layout';
 
 // ─── Layout placeholders ─────────────────────────────────────────────────────
 // TODO: Member 1 — Replace lazy imports with actual pages as they are built
@@ -45,11 +52,11 @@ export const router = createBrowserRouter([
   // ─── Internal App Routes ────────────────────────────────────────────────
   {
     path: '/app',
-    // TODO: Member 1 — Wrap with <AppLayout /> + auth guard
+    element: <AppLayout />,
     children: [
       {
         index: true,
-        element: <Navigate to="/app/dashboard" replace />,
+        element: <Navigate to="/app/quotations" replace />,
       },
       {
         path: 'dashboard',
@@ -58,18 +65,27 @@ export const router = createBrowserRouter([
       },
       {
         path: 'quotations',
-        element: <PlaceholderPage title="Quotations" />,
-        // TODO: Member 2 — Replace with <QuotationsPage />
+        element: <QuotationsPage />,
+      },
+      {
+        path: 'quotations/new',
+        element: <QuotationBuilderPage />,
       },
       {
         path: 'quotations/:id',
-        element: <PlaceholderPage title="Quotation Detail" />,
-        // TODO: Member 2 — Replace with <QuotationDetailPage />
+        element: <QuotationDetailPage />,
+      },
+      {
+        path: 'quotations/:id/edit',
+        element: <QuotationBuilderPage />,
       },
       {
         path: 'approvals',
-        element: <PlaceholderPage title="Approvals" />,
-        // TODO: Member 2 — Replace with <ApprovalsPage />
+        element: <ApprovalsPage />,
+      },
+      {
+        path: 'approvals/:id',
+        element: <ApprovalDetailPage />,
       },
       {
         path: 'deal-twin',
@@ -125,7 +141,7 @@ export const router = createBrowserRouter([
   // ─── Root redirect ──────────────────────────────────────────────────────
   {
     path: '/',
-    element: <Navigate to="/app/dashboard" replace />,
+    element: <Navigate to="/app/quotations" replace />,
   },
 
   // ─── 404 ────────────────────────────────────────────────────────────────
