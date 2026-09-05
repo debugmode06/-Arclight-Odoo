@@ -14,7 +14,12 @@ import { QuotationService } from '../modules/quotations/services/quotation.servi
 import { ApprovalService } from '../modules/approvals/services/approval.service';
 import { UserRole, CustomerTier } from '../shared';
 
-async function seed(): Promise<void> {
+export async function seedDemoUsers(): Promise<void> {
+  return seed();
+}
+
+export async function seed(): Promise<void> {
+
   validateEnv();
   await connectDatabase();
 

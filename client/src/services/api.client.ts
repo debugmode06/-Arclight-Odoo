@@ -31,8 +31,9 @@ apiClient.interceptors.response.use(
   }
 );
 
-export function extractData<T>(response: AxiosResponse<{ success: boolean; data: T }>): T {
-  return response.data.data;
+export function extractData<T>(response: AxiosResponse<{ success?: boolean; data?: T }>): T {
+  return response.data.data as T;
 }
 
 export default apiClient;
+

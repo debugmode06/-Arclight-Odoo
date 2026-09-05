@@ -12,7 +12,7 @@ async function bootstrap(): Promise<void> {
   // 2.5 Auto-seed demo accounts in development
   if (env.isDevelopment) {
     const { seedDemoUsers } = await import('./seed');
-    await seedDemoUsers().catch((err) => logger.error('Seed', 'Auto-seed error', err));
+    await seedDemoUsers().catch((err: unknown) => logger.error('Seed', 'Auto-seed error', err));
   }
 
   // 3. Start the Express server
