@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Types } from 'mongoose';
 import { QuotationService } from '../services/quotation.service';
+import { RecommendationService } from '../services/recommendation.service';
 import { createQuotationSchema, updateQuotationSchema, listQuotationsQuerySchema } from '../schemas/quotation.schema';
 import { sendSuccess, sendCreated, UserRole } from '../../../shared';
 import { User } from '../../auth/models/user.model';
@@ -90,6 +91,16 @@ export class QuotationController {
           ? 'Quotation auto-approved within standard sales limit'
           : 'Quotation submitted for management approval'
       );
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public static async getRecommendations(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const productIds = (req.body.productIds || []) as string[];
+      const recommendations = await RecommendationService.getRecommendations(productIds);
+      sendSuccess(res, recommendations);
     } catch (err) {
       next(err);
     }

@@ -1,33 +1,18 @@
-import { Router, Request, Response } from 'express';
-import { sendSuccess } from '../../../shared';
+import { Router } from 'express';
+import { AnalyticsController } from '../controllers/analytics.controller';
 
 export const analyticsRouter = Router();
 
-// GET /api/analytics/dashboard
-analyticsRouter.get('/dashboard', (_req: Request, res: Response) => {
-  // TODO: Member 4 — implement dashboard metrics aggregation
-  sendSuccess(res, {
-    totalQuotations: 0,
-    totalRevenue: 0,
-    conversionRate: 0,
-    pendingApprovals: 0,
-  }, 'Analytics dashboard endpoint — not yet implemented');
-});
+// Dashboard Metrics
+analyticsRouter.get('/dashboard', AnalyticsController.getDashboard);
 
-// GET /api/analytics/deal-health
-analyticsRouter.get('/deal-health', (_req: Request, res: Response) => {
-  // TODO: Member 4 — implement deal health scores
-  sendSuccess(res, [], 'Deal health endpoint — not yet implemented');
-});
+// Deal Health & Anomalies
+analyticsRouter.get('/deal-health', AnalyticsController.getDealHealth);
+analyticsRouter.post('/deal-health/:id/nudge', AnalyticsController.sendNudge);
 
-// GET /api/analytics/anomalies
-analyticsRouter.get('/anomalies', (_req: Request, res: Response) => {
-  // TODO: Member 4 — implement anomaly detection
-  sendSuccess(res, [], 'Anomalies endpoint — not yet implemented');
-});
+// Pipeline
+analyticsRouter.get('/pipeline', AnalyticsController.getPipeline);
 
-// GET /api/analytics/pipeline
-analyticsRouter.get('/pipeline', (_req: Request, res: Response) => {
-  // TODO: Member 4 — implement pipeline summary
-  sendSuccess(res, null, 'Pipeline endpoint — not yet implemented');
-});
+// Reports & CSV Export
+analyticsRouter.get('/reports', AnalyticsController.getReports);
+analyticsRouter.get('/reports/export', AnalyticsController.exportReports);

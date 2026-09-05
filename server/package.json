@@ -10,7 +10,8 @@
     "start": "node dist/server.js",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "seed": "tsx src/seed/index.ts"
+    "seed": "tsx src/seed/index.ts",
+    "test:e2e": "node test-api.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

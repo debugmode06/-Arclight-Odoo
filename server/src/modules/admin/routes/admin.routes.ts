@@ -1,34 +1,36 @@
-import { Router, Request, Response } from 'express';
-import { sendSuccess } from '../../../shared';
+import { Router } from 'express';
+import { AdminController } from '../controllers/admin.controller';
 
 export const adminRouter = Router();
 
-// GET /api/admin/users
-adminRouter.get('/users', (_req: Request, res: Response) => {
-  // TODO: Member 1 — requireAuth + requireRole(ADMIN)
-  sendSuccess(res, [], 'Admin users endpoint — not yet implemented');
-});
+// Users & Customers
+adminRouter.get('/users', AdminController.getUsers);
+adminRouter.get('/customers', AdminController.getCustomers);
 
-// GET /api/admin/products
-adminRouter.get('/products', (_req: Request, res: Response) => {
-  // TODO: Member 1 — implement product listing
-  sendSuccess(res, [], 'Admin products endpoint — not yet implemented');
-});
+// Categories
+adminRouter.get('/categories', AdminController.getCategories);
+adminRouter.post('/categories', AdminController.createCategory);
 
-// GET /api/admin/categories
-adminRouter.get('/categories', (_req: Request, res: Response) => {
-  // TODO: Member 1 — implement category listing
-  sendSuccess(res, [], 'Admin categories endpoint — not yet implemented');
-});
+// Products
+adminRouter.get('/products', AdminController.getProducts);
+adminRouter.post('/products', AdminController.createProduct);
 
-// GET /api/admin/price-lists
-adminRouter.get('/price-lists', (_req: Request, res: Response) => {
-  // TODO: Member 1 — implement price list listing
-  sendSuccess(res, [], 'Admin price-lists endpoint — not yet implemented');
-});
+// Discount Governance Rules
+adminRouter.get('/discount-rules', AdminController.getDiscountRules);
+adminRouter.post('/discount-rules', AdminController.createDiscountRule);
 
-// GET /api/admin/warehouses
-adminRouter.get('/warehouses', (_req: Request, res: Response) => {
-  // TODO: Member 1 — implement warehouse listing
-  sendSuccess(res, [], 'Admin warehouses endpoint — not yet implemented');
-});
+// Approval Rules
+adminRouter.get('/approval-rules', AdminController.getApprovalRules);
+adminRouter.post('/approval-rules', AdminController.createApprovalRule);
+
+// Warehouses
+adminRouter.get('/warehouses', AdminController.getWarehouses);
+adminRouter.post('/warehouses', AdminController.createWarehouse);
+
+// Inventory
+adminRouter.get('/inventory', AdminController.getInventory);
+adminRouter.post('/inventory/update-stock', AdminController.updateInventoryStock);
+
+// Subscription Plans
+adminRouter.get('/subscription-plans', AdminController.getSubscriptionPlans);
+adminRouter.post('/subscription-plans', AdminController.createSubscriptionPlan);

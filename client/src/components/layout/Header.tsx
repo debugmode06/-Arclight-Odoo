@@ -8,7 +8,9 @@ import {
   HelpCircle,
   ChevronDown,
   ChevronsUpDown,
+  LogOut,
 } from 'lucide-react';
+import { AuthService } from '@/modules/auth';
 
 interface HeaderProps {
   onCreateDeal?: () => void;
@@ -17,6 +19,10 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onCreateDeal, onSimulateImpact }) => {
   const navigate = useNavigate();
+  const currentUser = AuthService.getCurrentUser();
+  const initials = currentUser
+    ? `${currentUser.firstName?.[0] || ''}${currentUser.lastName?.[0] || ''}`.toUpperCase() || 'U'
+    : 'AM';
 
   return (
     <header className="h-14 bg-white border-b border-slate-200/90 px-5 flex items-center justify-between sticky top-0 z-40 select-none shadow-2xs">
@@ -103,18 +109,30 @@ export const Header: React.FC<HeaderProps> = ({ onCreateDeal, onSimulateImpact }
           <HelpCircle className="w-4 h-4" />
         </button>
 
-        {/* User Profile Capsule */}
-        <div className="flex items-center gap-2 pl-2 border-l border-slate-200 cursor-pointer">
+        {/* User Profile Capsule & Logout */}
+        <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
           <div className="w-8 h-8 rounded-full bg-purple-100 text-[#6344e7] font-bold text-xs flex items-center justify-center border border-purple-200 shadow-2xs">
-            AM
+            {initials}
           </div>
           <div className="hidden sm:flex flex-col text-left">
-            <span className="text-xs font-bold text-slate-900 leading-tight">Alex Morgan</span>
-            <span className="text-[10px] text-slate-400 leading-tight flex items-center gap-0.5 font-normal">
-              Sr. Sales Rep & Approver
-              <ChevronsUpDown className="w-2.5 h-2.5 text-slate-400" />
+            <span className="text-xs font-bold text-slate-900 leading-tight">
+              {currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'Alex Morgan'}
+            </span>
+            <span className="text-[10px] text-slate-500 font-medium leading-tight flex items-center gap-1">
+              <span className="inline-block px-1.5 py-0.2 bg-purple-50 text-purple-700 rounded text-[9px] font-bold border border-purple-100">
+                {currentUser?.role || 'SALES_REP'}
+              </span>
             </span>
           </div>
+
+          <button
+            type="button"
+            title="Sign Out"
+            onClick={() => AuthService.logout()}
+            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     </header>

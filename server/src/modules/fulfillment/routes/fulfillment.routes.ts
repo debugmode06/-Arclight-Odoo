@@ -1,34 +1,23 @@
-import { Router, Request, Response } from 'express';
-import { sendSuccess } from '../../../shared';
+import { Router } from 'express';
+import { FulfillmentController } from '../controllers/fulfillment.controller';
 
 export const fulfillmentRouter = Router();
 
 // GET /api/fulfillment
-fulfillmentRouter.get('/', (_req: Request, res: Response) => {
-  // TODO: Member 3 — implement fulfillment listing
-  sendSuccess(res, [], 'Fulfillment list endpoint — not yet implemented');
-});
+fulfillmentRouter.get('/', FulfillmentController.list);
 
-// GET /api/fulfillment/inventory
-fulfillmentRouter.get('/inventory', (_req: Request, res: Response) => {
-  // TODO: Member 3 — implement inventory summary
-  sendSuccess(res, [], 'Inventory endpoint — not yet implemented');
-});
+// GET /api/fulfillment/recommend-split?quotationId=... OR /api/fulfillment/recommend-split/:quotationId
+fulfillmentRouter.get('/recommend-split', FulfillmentController.recommendSplit);
+fulfillmentRouter.get('/recommend-split/:quotationId', FulfillmentController.recommendSplit);
+
+// POST /api/fulfillment/allocate
+fulfillmentRouter.post('/allocate', FulfillmentController.allocate);
 
 // GET /api/fulfillment/backorders
-fulfillmentRouter.get('/backorders', (_req: Request, res: Response) => {
-  // TODO: Member 3 — implement backorders listing
-  sendSuccess(res, [], 'Backorders endpoint — not yet implemented');
-});
+fulfillmentRouter.get('/backorders', FulfillmentController.getBackorders);
+
+// POST /api/fulfillment/backorders/:id/consolidate
+fulfillmentRouter.post('/backorders/:id/consolidate', FulfillmentController.consolidateBackorder);
 
 // GET /api/fulfillment/:id
-fulfillmentRouter.get('/:id', (_req: Request, res: Response) => {
-  // TODO: Member 3 — implement fulfillment detail
-  sendSuccess(res, null, 'Fulfillment detail endpoint — not yet implemented');
-});
-
-// POST /api/fulfillment/:id/allocate
-fulfillmentRouter.post('/:id/allocate', (_req: Request, res: Response) => {
-  // TODO: Member 3 — implement stock allocation
-  sendSuccess(res, null, 'Allocate endpoint — not yet implemented');
-});
+fulfillmentRouter.get('/:id', FulfillmentController.getById);

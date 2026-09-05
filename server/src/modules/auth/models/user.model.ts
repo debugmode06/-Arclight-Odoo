@@ -7,6 +7,8 @@ export interface IUser extends Document {
   firstName: string;
   lastName: string;
   role: UserRole;
+  company?: string;
+  customerId?: mongoose.Types.ObjectId;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -24,6 +26,8 @@ const userSchema = new Schema<IUser>(
       default: UserRole.SALES_REP,
       required: true,
     },
+    company: { type: String, trim: true },
+    customerId: { type: Schema.Types.ObjectId, ref: 'Customer' },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

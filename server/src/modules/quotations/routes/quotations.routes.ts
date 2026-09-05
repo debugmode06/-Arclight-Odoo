@@ -28,6 +28,9 @@ quotationsRouter.get('/meta/products', async (_req: Request, res: Response, next
 // Live calculation preview endpoint (pre-save calculation)
 quotationsRouter.post('/recalculate', QuotationController.recalculate);
 
+// Recommendations endpoint
+quotationsRouter.post('/recommendations', QuotationController.getRecommendations);
+
 // Standard Quotations CRUD
 quotationsRouter.get('/', QuotationController.list);
 quotationsRouter.post('/', QuotationController.create);
@@ -35,3 +38,4 @@ quotationsRouter.get('/:id', QuotationController.getById);
 quotationsRouter.put('/:id', QuotationController.update);
 quotationsRouter.delete('/:id', QuotationController.delete);
 quotationsRouter.post('/:id/submit', QuotationController.submit);
+

@@ -57,6 +57,17 @@ export class QuotationService {
     };
   }
 
+  public static async getQuotations(params?: {
+    search?: string;
+    status?: QuotationStatus;
+    customerId?: string;
+    riskLevel?: RiskLevel;
+    page?: number;
+    limit?: number;
+  }): Promise<QuotationListResponse> {
+    return this.listQuotations(params);
+  }
+
   public static async getQuotationById(id: string): Promise<Quotation> {
     const res = await apiClient.get<ApiResponse<Quotation>>(`/quotations/${id}`);
     return extractData(res);
@@ -90,6 +101,14 @@ export class QuotationService {
     const res = await apiClient.post<ApiResponse<RecalculateResponse>>(
       '/quotations/recalculate',
       payload
+    );
+    return extractData(res);
+  }
+
+  public static async getRecommendations(productIds: string[]): Promise<any[]> {
+    const res = await apiClient.post<ApiResponse<any[]>>(
+      '/quotations/recommendations',
+      { productIds }
     );
     return extractData(res);
   }

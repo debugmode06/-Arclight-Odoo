@@ -22,6 +22,8 @@ import {
   Calendar,
   Layers,
   HelpCircle,
+  Sparkles,
+  X,
 } from 'lucide-react';
 
 interface BuilderLineItem extends QuotationLineInput {
@@ -76,6 +78,10 @@ export const QuotationBuilderPage: React.FC = () => {
 
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Recommendations state
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [dismissedRecIds, setDismissedRecIds] = useState<string[]>([]);
 
   // Load Customers & Products
   useEffect(() => {
@@ -241,6 +247,47 @@ export const QuotationBuilderPage: React.FC = () => {
     lines.length,
     lines.map((l) => `${l.productId}-${l.quantity}-${l.unitPrice}-${l.discountPercent}`).join('|'),
   ]);
+
+  // Load Upsell Recommendations whenever products change
+  useEffect(() => {
+    const productIds = lines.map((l) => l.productId).filter(Boolean);
+    if (productIds.length > 0) {
+      QuotationService.getRecommendations(productIds)
+        .then((data) => setRecommendations(data || []))
+        .catch(() => setRecommendations([]));
+    } else {
+      setRecommendations([]);
+    }
+  }, [lines.map((l) => l.productId).join(',')]);
+
+  const handleAddUpsell = (rec: any) => {
+    const p = products.find((prod) => prod._id === rec.productId);
+    if (!p) return;
+    const newLine: BuilderLineItem = {
+      id: `line-${Date.now()}-${Math.random()}`,
+      productId: p._id,
+      productName: p.name,
+      sku: p.sku,
+      categoryName: typeof p.categoryId === 'object' ? p.categoryId.name : 'General',
+      quantity: 1,
+      unitPrice: p.basePrice,
+      costPrice: p.costPrice,
+      discountPercent: 0,
+      taxPercent: 0,
+      lineSubtotal: p.basePrice,
+      discountAmount: 0,
+      lineTotal: p.basePrice,
+      lineCost: p.costPrice,
+      lineMargin: p.basePrice - p.costPrice,
+      lineMarginPercent: p.basePrice > 0 ? ((p.basePrice - p.costPrice) / p.basePrice) * 100 : 0,
+    };
+    setLines([...lines, newLine]);
+    setDismissedRecIds((prev) => [...prev, rec.productId]);
+  };
+
+  const handleDismissUpsell = (productId: string) => {
+    setDismissedRecIds((prev) => [...prev, productId]);
+  };
 
   // Handlers for modifying line items
   const handleAddLine = () => {
@@ -673,6 +720,69 @@ export const QuotationBuilderPage: React.FC = () => {
                 ))}
               </div>
             </div>
+
+            {/* Live Upsell / Cross-Sell Recommendations */}
+            {recommendations.filter((r) => !dismissedRecIds.includes(r.productId)).length > 0 && (
+              <div className="bg-gradient-to-br from-purple-50/60 to-white rounded-xl border border-purple-200/80 shadow-xs p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[#6344e7]" />
+                    <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                      RevOps Recommendation Engine
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-[#6344e7]">
+                    Accretive Add-On
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500">
+                  Targeted margin-accretive add-ons based on product pairing rules and customer tier:
+                </p>
+
+                <div className="space-y-2 pt-1">
+                  {recommendations
+                    .filter((r) => !dismissedRecIds.includes(r.productId))
+                    .map((rec) => (
+                      <div
+                        key={rec.productId}
+                        className="bg-white border border-purple-100 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs hover:border-purple-200 transition-colors"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-900">{rec.name}</span>
+                            <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              {rec.promotionBadge}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500">{rec.reason}</p>
+                          <div className="text-[11px] font-semibold text-slate-700">
+                            Base: ${rec.basePrice?.toLocaleString()} • Projected Margin: {rec.marginImpactPercent}%
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleDismissUpsell(rec.productId)}
+                            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 text-xs cursor-pointer"
+                            title="Dismiss suggestion"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleAddUpsell(rec)}
+                            className="px-3 py-1.5 bg-[#6344e7] hover:bg-[#5233d4] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            Add to Quote
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
 
             {/* Notes Card */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-xs p-5 space-y-2">
