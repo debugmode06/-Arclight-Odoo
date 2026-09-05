@@ -40,3 +40,18 @@ coverage/
 # ─── Misc ─────────────────────────────────────────────────────────────────────
 *.tgz
 .cache/
+.vite/
+
+# ─── Explicitly allow .env.example ──────────────────────────────────────────
+# All .env.* files are ignored EXCEPT the example template
+.env.*
+!.env.example
+
+# ─── Security: never commit secrets ──────────────────────────────────────────
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
+secrets/
+credentials/
