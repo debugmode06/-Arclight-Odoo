@@ -30,12 +30,12 @@ export interface RecalculateResponse {
 
 export class QuotationService {
   public static async getCustomers(): Promise<Customer[]> {
-    const res = await apiClient.get<ApiResponse<Customer[]>>('/api/quotations/meta/customers');
+    const res = await apiClient.get<ApiResponse<Customer[]>>('/quotations/meta/customers');
     return extractData(res);
   }
 
   public static async getProducts(): Promise<Product[]> {
-    const res = await apiClient.get<ApiResponse<Product[]>>('/api/quotations/meta/products');
+    const res = await apiClient.get<ApiResponse<Product[]>>('/quotations/meta/products');
     return extractData(res);
   }
 
@@ -48,7 +48,7 @@ export class QuotationService {
     limit?: number;
   }): Promise<QuotationListResponse> {
     const res = await apiClient.get<{ success: boolean; data: Quotation[]; pagination: any }>(
-      '/api/quotations',
+      '/quotations',
       { params }
     );
     return {
@@ -58,12 +58,12 @@ export class QuotationService {
   }
 
   public static async getQuotationById(id: string): Promise<Quotation> {
-    const res = await apiClient.get<ApiResponse<Quotation>>(`/api/quotations/${id}`);
+    const res = await apiClient.get<ApiResponse<Quotation>>(`/quotations/${id}`);
     return extractData(res);
   }
 
   public static async createQuotation(payload: CreateQuotationPayload): Promise<Quotation> {
-    const res = await apiClient.post<ApiResponse<Quotation>>('/api/quotations', payload);
+    const res = await apiClient.post<ApiResponse<Quotation>>('/quotations', payload);
     return extractData(res);
   }
 
@@ -71,16 +71,16 @@ export class QuotationService {
     id: string,
     payload: Partial<CreateQuotationPayload>
   ): Promise<Quotation> {
-    const res = await apiClient.put<ApiResponse<Quotation>>(`/api/quotations/${id}`, payload);
+    const res = await apiClient.put<ApiResponse<Quotation>>(`/quotations/${id}`, payload);
     return extractData(res);
   }
 
   public static async deleteQuotation(id: string): Promise<void> {
-    await apiClient.delete(`/api/quotations/${id}`);
+    await apiClient.delete(`/quotations/${id}`);
   }
 
   public static async submitQuotation(id: string): Promise<Quotation> {
-    const res = await apiClient.post<ApiResponse<Quotation>>(`/api/quotations/${id}/submit`);
+    const res = await apiClient.post<ApiResponse<Quotation>>(`/quotations/${id}/submit`);
     return extractData(res);
   }
 
@@ -88,7 +88,7 @@ export class QuotationService {
     payload: CreateQuotationPayload
   ): Promise<RecalculateResponse> {
     const res = await apiClient.post<ApiResponse<RecalculateResponse>>(
-      '/api/quotations/recalculate',
+      '/quotations/recalculate',
       payload
     );
     return extractData(res);

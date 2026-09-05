@@ -46,7 +46,8 @@ export class QuotationService {
    */
   private static async processLines(
     linesInput: QuotationLineInput[],
-    customer: { _id: Types.ObjectId; tier: any }
+    customer: { _id: Types.ObjectId; tier: any },
+    allowBlocked: boolean = false
   ): Promise<IQuotationLine[]> {
     const lines: IQuotationLine[] = [];
 
@@ -90,7 +91,7 @@ export class QuotationService {
       });
 
       // Check if BLOCKED by hard ceiling
-      if (governance.decision === 'BLOCKED') {
+      if (governance.decision === 'BLOCKED' && !allowBlocked) {
         throw new BadRequestError(
           `Line '${product.name}' violation: ${governance.reason}`
         );
@@ -135,7 +136,7 @@ export class QuotationService {
     const customer = await Customer.findById(input.customerId);
     if (!customer) throw new NotFoundError('Customer not found');
 
-    const lines = await this.processLines(input.lines || [], customer);
+    const lines = await this.processLines(input.lines || [], customer, true);
     const summary = PricingService.calculateSummary(lines);
     const risk = RiskService.calculateRisk({
       lines,
@@ -145,10 +146,20 @@ export class QuotationService {
       grossMarginPercent: summary.grossMarginPercent,
     });
 
+    const isBlocked = lines.some((l) => l.governanceDecision === 'BLOCKED');
+    const decision = isBlocked
+      ? 'BLOCKED'
+      : risk.requiresApproval
+      ? 'APPROVAL_REQUIRED'
+      : 'WITHIN_LIMIT';
+
     return {
       lines,
       summary,
-      risk,
+      risk: {
+        ...risk,
+        decision,
+      },
     };
   }
 

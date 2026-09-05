@@ -44,6 +44,14 @@ app.use('/api', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// ─── URL Normalization (handles duplicate /api prefixes safely) ───────────────
+app.use((req, _res, next) => {
+  if (req.url.startsWith('/api/api/')) {
+    req.url = req.url.replace(/^\/api\/api\//, '/api/');
+  }
+  next();
+});
+
 // ─── Logging ───────────────────────────────────────────────────────────────
 if (env.isDevelopment) {
   app.use(morgan('dev'));

@@ -47,7 +47,14 @@ export class RiskService {
       const excess = Math.max(0, line.discountPercent - threshold);
       const weight = line.lineSubtotal / subtotal;
 
-      if (excess > 0) {
+      if (line.governanceDecision === 'BLOCKED') {
+        totalWeightedExcess += Math.max(10, excess) * weight;
+        violatingLinesCount++;
+        factors.push(
+          line.governanceReason ||
+            `HARD CEILING BREACH: Line '${line.productNameSnapshot}' discount of ${line.discountPercent}% exceeds maximum policy ceiling`
+        );
+      } else if (excess > 0) {
         totalWeightedExcess += excess * weight;
         violatingLinesCount++;
         factors.push(

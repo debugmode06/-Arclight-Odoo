@@ -24,6 +24,10 @@ const apiClient: AxiosInstance = axios.create({
 // ─── Request Interceptor: Inject access token ─────────────────────────────
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // Prevent duplicate prefix when baseURL is '/api' and config.url starts with '/api/'
+    if (config.url && config.baseURL === '/api' && config.url.startsWith('/api/')) {
+      config.url = config.url.slice(4);
+    }
     const token = localStorage.getItem('accessToken');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;

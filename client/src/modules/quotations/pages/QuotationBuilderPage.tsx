@@ -122,9 +122,9 @@ export const QuotationBuilderPage: React.FC = () => {
             governanceWarning: l.governanceReason,
           }));
           setLines(mappedLines);
-        } else if (custRes.length > 0 && prodRes.length > 0) {
-          // Defaults for new quote
-          setSelectedCustomerId(custRes[0]._id);
+        } else if (prodRes.length > 0) {
+          // Defaults for new quote: Keep customer unselected initially to show '-- Select Customer --'
+          setSelectedCustomerId('');
           // Set initial line with first product
           const p = prodRes[0];
           const initialLine: BuilderLineItem = {
@@ -160,21 +160,32 @@ export const QuotationBuilderPage: React.FC = () => {
 
   // Recalculate summary and governance preview whenever lines or customer changes
   useEffect(() => {
+    const localSubtotal = lines.reduce((acc, l) => acc + (l.lineSubtotal || 0), 0);
+    const localDiscount = lines.reduce((acc, l) => acc + (l.discountAmount || 0), 0);
+    const localCost = lines.reduce((acc, l) => acc + (l.lineCost || 0), 0);
+    const grandTotal = Math.max(0, localSubtotal - localDiscount);
+    const grossMargin = grandTotal - localCost;
+    const grossMarginPercent = grandTotal > 0 ? (grossMargin / grandTotal) * 100 : 0;
+
     if (!selectedCustomerId || lines.length === 0) {
       setSummary({
-        subtotal: 0,
-        totalDiscount: 0,
+        subtotal: localSubtotal,
+        totalDiscount: localDiscount,
         totalTax: 0,
-        grandTotal: 0,
-        costTotal: 0,
-        grossMargin: 0,
-        grossMarginPercent: 0,
+        grandTotal,
+        costTotal: localCost,
+        grossMargin,
+        grossMarginPercent,
       });
       setRisk({
         score: 0,
         level: 'LOW',
-        factors: ['Add products to see commercial governance analysis'],
+        factors:
+          lines.length === 0
+            ? ['Add products to see commercial governance analysis']
+            : ['Select a customer to evaluate tier-based discount governance'],
         requiresApproval: false,
+        decision: 'WITHIN_LIMIT',
       });
       return;
     }
@@ -186,10 +197,10 @@ export const QuotationBuilderPage: React.FC = () => {
           currency,
           lines: lines.map((l) => ({
             productId: l.productId,
-            quantity: l.quantity,
-            unitPrice: l.unitPrice,
-            discountPercent: l.discountPercent,
-            taxPercent: l.taxPercent || 0,
+            quantity: Number(l.quantity) || 1,
+            unitPrice: Number(l.unitPrice) || 0,
+            discountPercent: Number(l.discountPercent) || 0,
+            taxPercent: Number(l.taxPercent || 0),
           })),
         };
 
@@ -207,6 +218,7 @@ export const QuotationBuilderPage: React.FC = () => {
               lineSubtotal: calculated.lineSubtotal,
               discountAmount: calculated.discountAmount,
               lineTotal: calculated.lineTotal,
+              lineCost: calculated.lineCost,
               lineMargin: calculated.lineMargin,
               lineMarginPercent: calculated.lineMarginPercent,
               governanceWarning:
@@ -216,14 +228,19 @@ export const QuotationBuilderPage: React.FC = () => {
             };
           })
         );
-      } catch (err) {
-        // Silently catch live preview calculation errors while typing
+      } catch (err: any) {
+        console.warn('Live recalculation error:', err);
       }
     };
 
     const timeout = setTimeout(triggerRecalculate, 250);
     return () => clearTimeout(timeout);
-  }, [selectedCustomerId, lines.length, lines.map((l) => `${l.productId}-${l.quantity}-${l.unitPrice}-${l.discountPercent}`).join('|')]);
+  }, [
+    selectedCustomerId,
+    currency,
+    lines.length,
+    lines.map((l) => `${l.productId}-${l.quantity}-${l.unitPrice}-${l.discountPercent}`).join('|'),
+  ]);
 
   // Handlers for modifying line items
   const handleAddLine = () => {
@@ -284,6 +301,7 @@ export const QuotationBuilderPage: React.FC = () => {
           lineSubtotal: subtotal,
           discountAmount: discAmt,
           lineTotal: total,
+          lineCost: cost,
           lineMargin: margin,
           lineMarginPercent: marginPct,
         };
@@ -314,6 +332,7 @@ export const QuotationBuilderPage: React.FC = () => {
           lineSubtotal: subtotal,
           discountAmount: discAmt,
           lineTotal: total,
+          lineCost: cost,
           lineMargin: margin,
           lineMarginPercent: marginPct,
         };
@@ -321,7 +340,7 @@ export const QuotationBuilderPage: React.FC = () => {
     );
   };
 
-  // Save Quotation (Draft)
+  // Save Quotation (Draft or Submit)
   const handleSave = async (andSubmit = false) => {
     if (!selectedCustomerId) {
       setErrorMessage('Please select a customer');
@@ -330,6 +349,22 @@ export const QuotationBuilderPage: React.FC = () => {
     if (lines.length === 0) {
       setErrorMessage('Add at least one line item');
       return;
+    }
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line.productId) {
+        setErrorMessage(`Please select a product for Line #${i + 1}`);
+        return;
+      }
+      if (line.quantity <= 0 || !Number.isInteger(Number(line.quantity))) {
+        setErrorMessage(`Line #${i + 1}: Quantity must be a positive whole number greater than 0`);
+        return;
+      }
+      const disc = line.discountPercent ?? 0;
+      if (disc < 0 || disc > 100) {
+        setErrorMessage(`Line #${i + 1}: Discount must be between 0% and 100%`);
+        return;
+      }
     }
 
     try {
