@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 {"version":3,"file":"router.d.ts","sourceRoot":"","sources":["router.tsx"],"names":[],"mappings":"AAoBA,eAAO,MAAM,MAAM,mCAiGjB,CAAC"}
+=======
+{"version":3,"file":"router.d.ts","sourceRoot":"","sources":["router.tsx"],"names":[],"mappings":"AAyBA;;;;;;;;;;;;;GAaG;AACH,eAAO,MAAM,MAAM,mCAqHjB,CAAC"}
+>>>>>>> origin/feature/member4-portal-analytics

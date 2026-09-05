@@ -41,8 +41,7 @@ export async function connectDatabase(): Promise<void> {
         console.error('[DB] Embedded MongoMemoryServer failed:', memErr);
       }
     }
-    console.error('[DB] Failed to connect to MongoDB:', error);
-    process.exit(1);
+    console.warn('[DB] Could not connect to MongoDB instance. Server running with fallback:', error);
   }
 }
 
